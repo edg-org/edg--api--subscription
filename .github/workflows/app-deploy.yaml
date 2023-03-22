@@ -1,0 +1,19 @@
+name: Deploy
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+      - develop
+
+jobs:
+  deploy:
+    permissions:
+      contents: read
+      packages: write
+    uses: edg-org/edg--ops/.github/workflows/fastapi.yml@main
+    with:
+      registry: ghcr.io
+      image_name: ${{ github.repository }}
+      python_version: '3.9'

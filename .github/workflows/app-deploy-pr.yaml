@@ -1,0 +1,14 @@
+name: Deploy Pull Request
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches:
+      - main
+      - develop
+
+jobs:
+  deploy:
+    uses: edg-org/edg--ops/.github/workflows/fastapi-pr.yml@main
+    with:
+      python_version: '3.9'
