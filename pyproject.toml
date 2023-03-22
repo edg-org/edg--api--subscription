@@ -1,0 +1,15 @@
+[tool.black]
+line-length = 60
+
+[tool.isort]
+profile = "black"
+src_paths = ["api/configs", "api/core", "api/dependencies", "api/models", "api/repositories", "api/routers", "api/schemas", "api/services"]
+virtual_env = "env"
+
+[tool.pytest.ini_options]
+pythonpath = [
+  "."
+]
+testpaths = [
+  "api/__tests__"
+]
