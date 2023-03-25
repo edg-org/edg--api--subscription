@@ -23,4 +23,4 @@ RUN apt-get update && apt-get install -y default-libmysqlclient-dev \
 
 COPY --from=builder /usr/local/lib/python3.9/site-packages /usr/local/lib/python3.9/site-packages
 
-COPY api /app/
+COPY api /app/api
