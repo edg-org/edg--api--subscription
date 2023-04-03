@@ -77,3 +77,16 @@ def get_contact_by_id_for_admin(
         contact_service: ContactsService = Depends()
 ):
     return contact_service.get_contact_by_id_for_admin(id)
+
+
+@InvestigateContactRouter.get(
+    "/contact-type",
+    summary="search user by contact type only for active account",
+    description="search user by contact type only for active account"
+)
+def get_contact_by_type_for_admin(
+        contact_type: str,
+        offset: int, limit: int,
+        contact_service: ContactsService = Depends()
+):
+    return contact_service.get_contact_by_type_for_admin(contact_type, offset, limit)

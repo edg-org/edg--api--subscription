@@ -1,7 +1,7 @@
 import json
 import logging
 from datetime import datetime, date
-from typing import Dict, Any
+
 
 from pydantic import BaseModel, validator, EmailStr, constr
 
@@ -11,6 +11,7 @@ class Identity(BaseModel):
     pid: str
     given_date: date
     expire_date: date
+
     @validator('given_date', allow_reuse=True)
     def givenDateInFuture(cls, value):
         if value > date.today():
@@ -22,8 +23,6 @@ class Identity(BaseModel):
         if ex_date < date.today():
             raise ValueError("Your ID has expired")
         return ex_date
-
-
 
 
 class Address(BaseModel):
@@ -51,7 +50,7 @@ class ContactInfos(BaseModel):
 
     @validator('type', allow_reuse=True)
     def validateType(cls, type_value: str):
-        if type_value.lower() in ['client', 'prospect', 'abonné']:
+        if type_value.lower() in ['Client', 'Prospect', 'Abonné']:
             return type_value
         raise ValueError("Invalid contact type, the contact type should by one "
                              "of the following (Client, Abonné or Prospect)")

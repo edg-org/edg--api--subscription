@@ -101,3 +101,11 @@ class TestContactService(TestCase):
     def test_get_contact_by_pid_for_admin(self):
         self.contact_service.get_contact_by_pid_for_admin("string")
         self.contact_repository.get_contact_by_pid_for_admin.assert_called_once()
+
+    def test_get_contact_by_type_for_admin(self):
+        self.contact_service.get_contact_by_type_for_admin("Client", 0, 4)
+        self.contact_repository.get_contact_by_type_for_admin.assert_called_once()
+
+    def test_get_contact_by_type_for_client(self):
+        self.contact_service.get_contact_by_type_for_client("Client", 0, 4)
+        self.contact_repository.get_contact_by_type_for_client.assert_called_once()

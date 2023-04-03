@@ -211,3 +211,14 @@ class ContactsService:
             raise HTTPException(status_code=404, detail="We didn't found any user with the provided id")
         return c
 
+    def get_contact_by_type_for_admin(self, contact_type: str, offset: int, limit: int) -> List[Contacts]:
+        c = self.contacts_repository.get_contact_by_type_for_admin(contact_type, offset, limit)
+        if c is None:
+            raise HTTPException(status_code=404, detail="We didn't found any user with the provided contact type")
+        return c
+
+    def get_contact_by_type_for_client(self, contact_type: str, offset: int, limit: int) -> List[Contacts]:
+        c = self.contacts_repository.get_contact_by_type_for_client(contact_type, offset, limit)
+        if c is None:
+            raise HTTPException(status_code=404, detail="We didn't found any user with the provided contact type")
+        return c
