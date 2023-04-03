@@ -5,7 +5,6 @@ from api.metadata.Tags import Tags
 from api.models.BaseModel import init
 from api.routers.v1.InvestigateContactsRouter import InvestigateContactRouter
 from api.routers.v1.ContactsRouter import ContactsRouter
-from api.routers.v1.LogsRouter import LogsRouter
 
 # Application Environment Configuration
 env = get_environment_variables()
