@@ -1,4 +1,5 @@
 import json
+import logging
 from datetime import datetime, date
 from typing import Dict, Any
 
@@ -10,7 +11,6 @@ class Identity(BaseModel):
     pid: str
     given_date: date
     expire_date: date
-
     @validator('given_date', allow_reuse=True)
     def givenDateInFuture(cls, value):
         if value > date.today():
@@ -22,6 +22,8 @@ class Identity(BaseModel):
         if ex_date < date.today():
             raise ValueError("Your ID has expired")
         return ex_date
+
+
 
 
 class Address(BaseModel):
@@ -40,19 +42,20 @@ class ContactInfos(BaseModel):
     address: Address
 
     @validator('birthday')
-    def check_age(cls,value):
+    def check_age(cls, value):
         today = date.today()
         age = today.year - value.year - ((today.month, today.day) < (value.month, value.day))
         if age < 18:
             raise ValueError("You should be over the age of 18")
         return value
 
+    @validator('type', allow_reuse=True)
+    def validateType(cls, type_value: str):
+        if type_value.lower() in ['client', 'prospect', 'abonné']:
+            return type_value
+        raise ValueError("Invalid contact type, the contact type should by one "
+                             "of the following (Client, Abonné or Prospect)")
+
 
 class ContactsSchema(BaseModel):
     infos: ContactInfos
-
-
-
-
-
-
