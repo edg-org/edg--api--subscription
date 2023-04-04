@@ -83,19 +83,18 @@ class ContactsRepository:
 
     def get_contact_by_uid_for_client(self, contact_uid: str) -> Contacts:
         return self.db.scalars(select(Contacts).where(
-            Contacts.contact_uid == contact_uid,
+            Contacts.contact_uid.ilike(contact_uid),
             Contacts.is_deleted == False
         )).first()
 
     def get_contact_by_uid_for_admin(self, contact_uid: str) -> Contacts:
         return self.db.scalars(select(Contacts).where(
-            Contacts.contact_uid == contact_uid
+            Contacts.contact_uid.ilike(contact_uid)
         )).first()
-
 
     def get_contact_by_type_for_admin(self, contact_type: str, offset: int, limit: int) -> List[Contacts]:
         return self.db.scalars(select(Contacts).where(
-               Contacts.infos['type'] == contact_type.lower().capitalize()
+            Contacts.infos['type'] == contact_type.lower().capitalize()
         ).offset(offset).limit(limit)).all()
 
     def get_contact_by_type_for_client(self, contact_type: str, offset: int, limit: int) -> List[Contacts]:
