@@ -50,7 +50,7 @@ class ContactInfos(BaseModel):
 
     @validator('type', allow_reuse=True)
     def validateType(cls, type_value: str):
-        if type_value.lower() in ['Client', 'Prospect', 'Abonné']:
+        if type_value.lower().capitalize() in ['Client', 'Prospect', 'Abonné']:
             return type_value
         raise ValueError("Invalid contact type, the contact type should by one "
                              "of the following (Client, Abonné or Prospect)")

@@ -20,7 +20,7 @@ class Contacts(EntityMeta):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     infos: Mapped[Dict] = mapped_column(JSON)
-    is_deleted: Mapped[bool] = mapped_column(default=False)
+    is_activated: Mapped[bool] = mapped_column(default=True)
     contact_uid: Mapped[str] = mapped_column(String(10))
     created_at: Mapped[date] = mapped_column(default=date.today())
     updated_at: Mapped[date] = mapped_column(default=None, nullable=True)

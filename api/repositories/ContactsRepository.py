@@ -35,7 +35,7 @@ class ContactsRepository:
         self.db.commit()
 
     def get_contact_by_id_for_client(self, id: int) -> Contacts:
-        query = select(Contacts).where(Contacts.id == id, Contacts.is_deleted == False)
+        query = select(Contacts).where(Contacts.id == id, Contacts.is_activated == True)
         return self.db.scalars(query).first()
 
     def get_contact_by_id_for_admin(self, id: int) -> Contacts:
@@ -63,28 +63,28 @@ class ContactsRepository:
     def get_contact_by_pid_for_client(self, pid: str) -> Contacts:
         return self.db.scalars(select(Contacts).where(
             Contacts.infos['identity']['pid'] == pid,
-            Contacts.is_deleted == False
+            Contacts.is_activated == True
         )).first()
 
     def get_contact_by_phone_for_client(self, telephone: str) -> Contacts:
         return self.db.scalars(select(Contacts).where(
             telephone == Contacts.infos['address']['telephone'],
-            Contacts.is_deleted == False
+            Contacts.is_activated == True
         )).first()
 
     def get_contacts_for_client(self, offset: int, limit: int) -> List[Contacts]:
-        return self.db.scalars(select(Contacts).where(Contacts.is_deleted == False).offset(offset).limit(limit)).all()
+        return self.db.scalars(select(Contacts).where(Contacts.is_activated == True).offset(offset).limit(limit)).all()
 
     def get_contact_by_email_for_client(self, email: str) -> Contacts:
         return self.db.scalars(select(Contacts).where(
             Contacts.infos["address"]["email"] == email,
-            Contacts.is_deleted == False
+            Contacts.is_activated == True
         )).first()
 
     def get_contact_by_uid_for_client(self, contact_uid: str) -> Contacts:
         return self.db.scalars(select(Contacts).where(
             Contacts.contact_uid.ilike(contact_uid),
-            Contacts.is_deleted == False
+            Contacts.is_activated == True
         )).first()
 
     def get_contact_by_uid_for_admin(self, contact_uid: str) -> Contacts:
@@ -100,5 +100,5 @@ class ContactsRepository:
     def get_contact_by_type_for_client(self, contact_type: str, offset: int, limit: int) -> List[Contacts]:
         return self.db.scalars(select(Contacts).where(
             Contacts.infos['type'] == contact_type.lower().capitalize(),
-            Contacts.is_deleted == False
+            Contacts.is_activated == True
         ).offset(offset).limit(limit)).all()
