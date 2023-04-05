@@ -82,5 +82,5 @@ class TestContactRepository(TestCase):
         self.contacts_repository.get_contact_by_type_for_admin("Client", 0, 4)
         self.session.scalars.assert_called_once()
     def loadJson(self):
-        f = open("../createContact.json")
+        f = open("api/__tests__/createContact.json")
         return json.load(f)

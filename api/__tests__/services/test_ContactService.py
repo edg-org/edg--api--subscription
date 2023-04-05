@@ -27,6 +27,8 @@ class TestContactService(TestCase):
         self.contact_repository.get_contact_by_phone_for_admin = Mock()
         self.contact_repository.get_contact_by_email_for_admin = Mock()
         self.contact_repository.get_contact_by_pid_for_admin = Mock()
+        self.contact_repository.get_contact_by_type_for_client = Mock()
+        self.contact_repository.get_contact_by_type_for_admin = Mock()
 
     @patch("api.schemas.pydantic.ContactsSchema.ContactInfos", autospec=True)
     @patch("api.schemas.pydantic.ContactsSchema.ContactsSchema", autospec=True)
@@ -52,7 +54,7 @@ class TestContactService(TestCase):
         # self.contactRepository.createContact.assert_called_once()
 
     def loadJson(self):
-        f = open("../createContactService.json")
+        f = open("api/__tests__/createContact.json")
         return json.load(f)
 
     @patch(
