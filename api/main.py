@@ -3,8 +3,8 @@ from fastapi import FastAPI
 from api.configs.Environment import get_environment_variables
 from api.metadata.Tags import Tags
 from api.models.BaseModel import init
-from api.routers.v1.AuthorRouter import AuthorRouter
-from api.routers.v1.BookRouter import BookRouter
+from api.routers.v1.InvestigateContactsRouter import InvestigateContactRouter
+from api.routers.v1.ContactsRouter import ContactsRouter
 
 # Application Environment Configuration
 env = get_environment_variables()
@@ -17,8 +17,14 @@ app = FastAPI(
 )
 
 # Add Routers
-app.include_router(AuthorRouter)
-app.include_router(BookRouter)
+app.include_router(ContactsRouter)
+app.include_router(InvestigateContactRouter)
+
+# app.include_router(BookRouter)
 
 # Initialise Data Model Attributes
 init()
+
+
+
+

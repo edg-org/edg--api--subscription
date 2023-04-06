@@ -1,0 +1,18 @@
+{
+  "type": "string",
+  "name": "string",
+  "firstname": "string",
+  "birthday": "2000-03-29",
+  "job": "string",
+  "identity": {
+    "type": "string",
+    "identity_number": "stringOPk",
+    "given_date": "2023-03-29",
+    "expire_date": "2023-03-29"
+  },
+  "address": {
+    "quartier": "string",
+    "email": "userop3@example.com",
+    "telephone": "+224-610-18-22-03"
+  }
+}
