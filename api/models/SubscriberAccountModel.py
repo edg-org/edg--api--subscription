@@ -23,5 +23,3 @@ class SubscriberAccount(EntityMeta):
     creation_at: Mapped[date]
     update_at: Mapped[date]
     delete_at: Mapped[date]
-
-

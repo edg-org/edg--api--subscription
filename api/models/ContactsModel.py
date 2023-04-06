@@ -44,5 +44,3 @@ class Contacts(EntityMeta):
             "contact_uid": self.contact_uid.__str__()
         }
 
-
-

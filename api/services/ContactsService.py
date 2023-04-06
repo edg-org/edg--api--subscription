@@ -23,7 +23,7 @@ class ContactsService:
         # Convertissons notre object en json
         contact_body.infos = json.loads(contact_body.infos.json())
         '''
-            Pour ne pas ajouter deux utilisateur avec utilisant le meme numero
+            Pour ne pas ajouter que deux utilisateur utilisent le meme numero
             email et la carte d'identite nous procedons a la verification dans la base 
             de donne et retournons un message d'erreur au cas ou les donnees sont deja 
             retrouvees dans la bd
