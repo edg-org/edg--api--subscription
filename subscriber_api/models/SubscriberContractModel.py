@@ -25,7 +25,6 @@ class SubscriberContract(EntityMeta):
     is_activated: Mapped[bool] = mapped_column(default=False)
     contract_uid: Mapped[str] = mapped_column(String(10))
     attachment: Mapped[dict] = mapped_column(JSON, default=None, nullable=True)
-    extend_existing = True
 
     def normalize(self):
         return {

@@ -1,0 +1,42 @@
+[
+{
+    "infos": {
+      "subscriber_type": 1,
+      "power_of_energy": "3 KVA",
+      "status": "en attente d'activation",
+      "previous_status": "créé",
+      "level": "Tout mode de paiement",
+      "previous_level": "null",
+      "invoicing_frequency": "mensuel",
+      "delivery_point": "12876547813",
+      "metric_number": "00000000000",
+      "agency": {
+        "name": "sandervalia",
+        "code": "san001",
+        "tel": "600 00 00 00",
+        "email": "agence-sand@edg.com.gn"
+      }
+    },
+    "customer_id": 1
+  },
+{
+    "infos": {
+      "subscriber_type": 1,
+      "power_of_energy": "3 KVA",
+      "status": "en attente d'activation",
+      "previous_status": "créé",
+      "level": "Tout mode de paiement",
+      "previous_level": "null",
+      "invoicing_frequency": "mensuel",
+      "delivery_point": "12876547815",
+      "metric_number": "00000000000",
+      "agency": {
+        "name": "sandervalia",
+        "code": "san001",
+        "tel": "600 00 00 00",
+        "email": "agence-sand@edg.com.gn"
+      }
+    },
+    "customer_id": 1
+  }
+]
