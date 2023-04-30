@@ -121,7 +121,7 @@ class SubscriberContactService:
             raise ContractStatusError
 
         contract_exist: SubscriberContract = self.subscriber_contract_repository \
-            .get_contract_by_contract_uid_for_client(contract_uid)
+            .get_contract_by_contract_uid(contract_uid)
         # if the contract does not exist, so we throw an exception
         if contract_exist is None:
             raise ContractNotFound
@@ -153,6 +153,9 @@ class SubscriberContactService:
         # If the closing date is set that mean that the contract is resigned
         if contract_exist.closing_date != None:
             raise ContractDisabled
+        # Subscription type and delivery point is immutable
+        contract_schema['subscription_type'] = contract_exist.infos['subscription_type']
+        contract_schema['delivery_point'] = contract_exist.infos['delivery_point']
 
         contract: SubscriberContract = self.subscriber_contract_repository.update_contract(
             SubscriberContract(
@@ -184,12 +187,13 @@ class SubscriberContactService:
             raise ContractNotFound
         if contract.infos['previous_status'] == status:
             raise ContractStatusError
+        # Manage status
         contract.infos['previous_status'] = contract.infos['status']
         contract.infos['status'] = status
         if status == Status.INITIAL:
             contract.opening_date = date.today()
             contract.is_activated = True
-        logging.error(contract.is_activated)
+
         contract = self.subscriber_contract_repository.update_contract(contract)
         return self.buildContractDto(contract)
 
