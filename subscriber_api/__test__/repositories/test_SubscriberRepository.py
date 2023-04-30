@@ -5,7 +5,7 @@ from unittest.mock import create_autospec, patch, Mock
 
 from sqlalchemy.orm import Session
 
-
+from api.services.ContactsService import ContactsService
 from subscriber_api.repositories.SubscriberContractRepository import SubscriberContractRepository
 from subscriber_api.schemas.SubscriberContractSchema import ContractDtoIncoming
 from subscriber_api.services.GuidGenerator import GuidGenerator
@@ -103,7 +103,7 @@ class TestSubscriberRepository(TestCase):
         self.session.scalars.assert_called_once()
 
     def loadJson(self):
-        f = open("subscriber_api/__test__/create_contract.json")
+        f = open("../create_contract.json")
         a = json.load(f)
         f.close()
         return a

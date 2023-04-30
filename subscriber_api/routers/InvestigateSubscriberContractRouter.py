@@ -7,14 +7,14 @@ from subscriber_api.services.SubscriberContractService import SubscriberContactS
 from subscriber_api.utilis.JWTBearer import JWTBearer
 
 InvestigateContractRouter: APIRouter = APIRouter(
-    prefix="/v1/contracts/investigate",
-    tags=["investigate contract"],
+    prefix="/v1/customers",
+    tags=["customer"],
     dependencies=[Depends(JWTBearer)]
 )
 
 
 @InvestigateContractRouter.get(
-    path="/{costume_id}",
+    path="/{number}",
     response_model=ContractDto,
     status_code=status.HTTP_200_OK,
     summary="This endpoint filter contract by costume id",
@@ -30,7 +30,7 @@ async def get_contract_by_customer_id_for_admin(
 
 
 @InvestigateContractRouter.get(
-    path="/{contract_uid}",
+    path="/{number}/subscriptions",
     response_model=ContractDto,
     status_code=status.HTTP_200_OK,
     summary="This endpoint filter contract by contract unique number",

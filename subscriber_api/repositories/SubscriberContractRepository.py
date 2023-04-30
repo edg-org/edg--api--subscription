@@ -82,7 +82,7 @@ class SubscriberContractRepository:
             SubscriberContract.customer_id == customer_id
         ).offset(offset).limit(limit)).all()
 
-    def get_contract_by_contract_uid_for_client(self, contract_uid: str) -> SubscriberContract:
+    def get_contract_by_contract_uid(self, contract_uid: str) -> SubscriberContract:
         """
         This function fetch the contract information corresponding to given contract_uid
         (unique contract ID for the contract) where is_activated is equal to True
@@ -90,8 +90,7 @@ class SubscriberContractRepository:
         :return:SubscriberContract
         """
         return self.db.scalars(select(SubscriberContract).where(
-            SubscriberContract.contract_uid.ilike(contract_uid),
-            SubscriberContract.is_activated == False
+            SubscriberContract.contract_uid.ilike(contract_uid)
         )).first()
 
     def get_contract_by_contract_uid_for_admin(self, contract_uid: str) -> SubscriberContract:
@@ -608,8 +607,6 @@ class SubscriberContractRepository:
 
     def get_contract_by_submitted_params(self,
                                          params: ContractDtoIncoming,
-                                         infos: SubscriberContractInfoForFilter,
-                                         agency: AgencyIncomingFilter,
                                          offset: int,
                                          limit: int) \
             -> List[SubscriberContract]:
@@ -624,38 +621,14 @@ class SubscriberContractRepository:
         """
         return self.db.scalars(
             select(SubscriberContract).filter(
-                SubscriberContract.customer_id == params.customer_id
-                if params.customer_id is not None else True,
-                SubscriberContract.opening_date == params.opening_date
-                if params.opening_date is not None else True,
-                SubscriberContract.closing_date == params.closing_date
-                if params.closing_date is not None else True,
-                SubscriberContract.created_at == params.created_at
-                if params.created_at is not None else True,
-                SubscriberContract.updated_at == params.updated_at
-                if params.updated_at is not None else True,
-                SubscriberContract.deleted_at == params.deleted_at
-                if params.deleted_at is not None else True,
-                SubscriberContract.contract_uid == params.contract_uid
-                if params.contract_uid is not None else True,
-                SubscriberContract.infos['status'] == infos.status
-                if infos.status is not None else True,
-                SubscriberContract.infos['previous_status'] == infos.previous_status
-                if infos.previous_status is not None else True,
-                SubscriberContract.infos['invoicing_frequency'] == infos.invoicing_frequency
-                if infos.invoicing_frequency is not None else True,
-                SubscriberContract.infos['subscription_type']['name'] == infos.subscription_type_name
-                if infos.subscription_type_name is not None else True,
-
-                SubscriberContract.infos['agency']['name'] == agency.name
-                if agency.name is not None else True,
-                SubscriberContract.infos['agency']['code'] == agency.code
-                if agency.code is not None else True,
-                SubscriberContract.infos['agency']['tel'] == agency.tel
-                if agency.tel is not None else True,
-                SubscriberContract.infos['agency']['email'] == agency.email
-                if agency.email is not None else True
-
+                SubscriberContract.contract_uid == params.contract_number
+                if params.contract_number is not None else True
+            ).join(Contacts).where(
+                Contacts.contact_uid == params.customer_number
+                if params.customer_number is not None else True
             )
             .offset(offset).limit(limit)
         ).all()
+
+    def get_contracts(self, offset: int, limit: int) -> List[SubscriberContract]:
+        return self.db.scalars(select(SubscriberContract).offset(offset).limit(limit)).all()

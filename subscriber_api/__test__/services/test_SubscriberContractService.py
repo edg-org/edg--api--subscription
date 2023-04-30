@@ -14,7 +14,7 @@ from subscriber_api.services.SubscriberContractService import SubscriberContactS
 
 
 def loadJson():
-    f = open("subscriber_api/__test__/create_contract.json")
+    f = open("../create_contract.json")
     a = json.load(f)
     f.close()
     return a

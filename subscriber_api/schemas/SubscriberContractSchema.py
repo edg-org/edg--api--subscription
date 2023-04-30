@@ -224,7 +224,6 @@ class SubscriberContractInfoForFilter(BaseModel):
     level_name: str | None = Field(description=OpenAPIFieldDescription.CONTRACT_INFO_LEVEL_NAME)
     tracking_name: str | None = Field(description=OpenAPIFieldDescription.TRACKING_NAME)
 
-
     class Config:
         orm_mode = True
 
@@ -250,13 +249,8 @@ class ContractDto(BaseModel):
 
 class ContractDtoIncoming(BaseModel):
     id: int | None
-    customer_id: int | None = Field(description=OpenAPIFieldDescription.CUSTOMER_ID)
-    opening_date: date | None = Field(description=OpenAPIFieldDescription.CONTRACT_OPENING_DATE)
-    closing_date: date | None = Field(description=OpenAPIFieldDescription.CONTRACT_CLOSING_DATE)
-    created_at: date | None = Field(description=OpenAPIFieldDescription.CONTRACT_CREATED_AT)
-    updated_at: date | None = Field(description=OpenAPIFieldDescription.CONTRACT_UPDATED_AT)
-    deleted_at: date | None = Field(description=OpenAPIFieldDescription.CONTRACT_CLOSING_DATE)
-    contract_uid: str | None = Field(description=OpenAPIFieldDescription.CONTRACT_UID)
+    customer_number: str | None = Field(description=OpenAPIFieldDescription.CUSTOMER_ID)
+    contract_number: str | None = Field(description=OpenAPIFieldDescription.CONTRACT_UID)
 
 
 class ContractDtoForBillingMicroService(BaseModel):
