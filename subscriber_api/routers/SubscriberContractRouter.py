@@ -42,11 +42,11 @@ def create_contrat(
     description="Using this endpoint, you will update the assigned contract for a specific contact",
 )
 def update_contract(
-        contract_uid: str,
+        number: str,
         contract_schema: SubscriberContractSchema,
         contract_service: SubscriberContactService = Depends()
 ):
-    return contract_service.update_contract(contract_uid, contract_schema)
+    return contract_service.update_contract(number, contract_schema)
 
 
 @SubscriberContractAPIRouter.put(
