@@ -6,6 +6,7 @@ from typing import List, Optional
 
 from fastapi import Depends
 from fastapi.encoders import jsonable_encoder
+from sqlalchemy import true
 
 from api.models.ContactsModel import Contacts
 from subscriber_api.models.SubscriberContractModel import SubscriberContract
@@ -19,6 +20,7 @@ from subscriber_api.schemas.SubscriberContractSchema import SubscriberContractSc
     SubscriberContractInfoForFilter, Agency, AgencyIncomingFilter, ContractDto, SubscriptionLevel, \
     SubscriptionLevelIncomingFilter, ContractDtoForBillingMicroService, SubscriptionType
 from subscriber_api.services.GuidGenerator import GuidGenerator
+from subscriber_api.utilis.Status import Status
 
 
 class SubscriberContactService:
@@ -175,32 +177,19 @@ class SubscriberContactService:
         :param status:
         :return:
         """
-        contract: SubscriberContract = self.subscriber_contract_repository.get_contract_by_contract_uid_for_client(
+        contract: SubscriberContract = self.subscriber_contract_repository.get_contract_by_contract_uid(
             contract_uid
         )
         if contract is None:
             raise ContractNotFound
         if contract.infos['previous_status'] == status:
             raise ContractStatusError
+        contract.infos['previous_status'] = contract.infos['status']
         contract.infos['status'] = status
-        contract = self.subscriber_contract_repository.update_contract(contract)
-        return self.buildContractDto(contract)
-
-    def update_contract_previous_status_by_contract_uid(self, contract_uid: str, previous_status: str) -> ContractDto:
-        """
-        This service update contract's previous status by contract uid
-        :param contract_uid:
-        :param previous_status:
-        :return:
-        """
-        contract: SubscriberContract = self.subscriber_contract_repository.get_contract_by_contract_uid_for_client(
-            contract_uid
-        )
-        if contract is None:
-            raise ContractNotFound
-        if contract.infos['status'] == previous_status:
-            raise ContractStatusError
-        contract.infos['previous_status'] = previous_status
+        if status == Status.INITIAL:
+            contract.opening_date = date.today()
+            contract.is_activated = True
+        logging.error(contract.is_activated)
         contract = self.subscriber_contract_repository.update_contract(contract)
         return self.buildContractDto(contract)
 
@@ -238,33 +227,18 @@ class SubscriberContactService:
 
         return [self.buildContractDto(c) for c in contract]
 
-    def get_contract_by_contract_uid_for_client(self, contract_uid: str) -> ContractDto:
+    def get_contract_by_contract_uid(self, contract_uid: str) -> ContractDto:
         """
         This service is used to fill activated contract by a specific contract unique number
         :param contract_uid: contract unique number
         :return: SubscriberContract or throw an HTTPException error
         """
         contract: List[SubscriberContract] = self.subscriber_contract_repository \
-            .get_contract_by_contract_uid_for_client(contract_uid)
+            .get_contract_by_contract_uid(contract_uid)
         if contract is None:
             raise ContractNotFound
 
         return self.buildContractDto(contract)
-
-    def get_contact_by_opening_date_for_client(self, opening_date: date, offset: int, limit: int) \
-            -> List[ContractDto]:
-        """
-        This service allow filtering activated contract by his opening date
-        :param opening_date: contract opening date
-        :param offset: start page
-        :param limit: end page
-        :return: List of contract between offset and limit
-        """
-        contract: List[SubscriberContract] = self.subscriber_contract_repository \
-            .get_contact_by_opening_date_for_client(opening_date, offset, limit)
-        if len(contract) == 0:
-            raise ContractNotFound
-        return [self.buildContractDto(c) for c in contract]
 
     def get_contract_by_contract_uid_for_microservice_billing(self, contract_uid: str) \
             -> ContractDtoForBillingMicroService:
@@ -294,231 +268,8 @@ class SubscriberContactService:
         else:
             return None
 
-    def get_contact_by_closing_date_for_client(self, closing_date: date, offset: int, limit: int) \
-            -> List[ContractDto]:
-        """
-        This service allow filtering activated contract by his opening date
-        :param closing_date: contract opening date
-        :param offset: start page
-        :param limit: end page
-        :return: List of contract between offset and limit
-        """
-        contract: List[SubscriberContract] = self.subscriber_contract_repository \
-            .get_contact_by_opening_date_for_client(closing_date, offset, limit)
-        if len(contract) == 0:
-            raise ContractNotFound
-        return [self.buildContractDto(c) for c in contract]
-
-    def get_contract_by_contact_uid_and_contract_uid_for_client(self, contract_uid: str, contact_uid: str) \
-            -> ContractDto:
-        """
-        This service is used to filter activated contracts for a specific contact by his contact number
-        :param contract_uid: unique contract's number
-        :param contact_uid: unique contact's number
-        :return: Contract or throw an HTTPException 404
-        """
-        contract: SubscriberContract = self.subscriber_contract_repository \
-            .get_contract_by_contact_uid_and_contract_uid_for_client(contract_uid, contact_uid)
-        if contract is None:
-            raise ContractNotFound
-        return self.buildContractDto(contract)
-
-    def get_contract_by_contact_pid_and_contract_uid_for_client(self, contract_uid: str,
-                                                                contact_pid: str) -> List[ContractDto]:
-        """
-        This service filter the activated contracts for a specific contact pid
-        (personal identity number of contact is can be passport number or ID number)
-        :param contract_uid:
-        :param contact_pid:
-        :return:
-        """
-        contract: List[SubscriberContract] = self.subscriber_contract_repository \
-            .get_contract_by_contact_pid_and_contract_uid_for_client(contract_uid, contact_pid)
-        if contract is None:
-            raise ContractNotFound
-        return self.buildContractDto(contract)
-
-    def get_contract_by_status_for_client(self, status: str, offset: int, limit: int) -> List[ContractDto]:
-        """
-        This service filter the activated contract by the given status
-        :param status: contract's status
-        :param offset: start pagination
-        :param limit: end of pagination
-        :return: List of SubscriberContract or throw an HTTPException 404
-        """
-        contract: List[SubscriberContract] = self.subscriber_contract_repository \
-            .get_contract_by_status_for_client(status, offset, limit)
-        if len(contract) == 0:
-            raise ContractNotFound
-        return [self.buildContractDto(c) for c in contract]
-
-    def get_contract_by_contract_id_and_order_by_opening_date_for_client(self, contact_id: int, offset: int, limit: int) \
-            -> List[ContractDto]:
-        """
-        This service filter activated contract by contact id and sort by opening date
-        :param contact_id: contact id from db
-        :param offset: start pagination
-        :param limit: end of pagination
-        :return: List SubscriberContract
-        """
-        contract: List[SubscriberContract] = self.subscriber_contract_repository \
-            .get_contract_by_contract_id_and_order_by_opening_date_for_client(contact_id, offset, limit)
-        if len(contract) == 0:
-            raise ContractNotFound
-        return [self.buildContractDto(c) for c in contract]
-
-    def get_contract_where_opening_date_between_two_dates_for_client(self, start_date: date, end_date: date,
-                                                                     offset: int, limit: int) \
-            -> List[ContractDto]:
-        """
-        This service filter contracts where the opening date is between two dates
-        :param start_date: start date for filter
-        :param end_date: end date
-        :param offset: start of pagination
-        :param limit: end of pagination
-        :return: List of SubscriberContract or throw an HTTPException error 404
-        """
-        contract: List[SubscriberContract] = self.subscriber_contract_repository \
-            .get_contract_where_opening_date_between_two_dates_for_client(start_date, end_date, offset, limit)
-        if len(contract) == 0:
-            raise ContractNotFound
-        return [self.buildContractDto(c) for c in contract]
-
-    def get_contract_where_opening_date_before_given_date_for_client(self, given_date: date,
-                                                                     offset: int, limit: int) \
-            -> List[ContractDto]:
-        """
-        This service filter contracts before given_date and order
-        by opening date
-        :param given_date: given date for filter
-        :param offset: start of pagination
-        :param limit: end of pagination
-        :return: List of SubscriberContract
-        """
-        contract: List[SubscriberContract] = self.subscriber_contract_repository \
-            .get_contract_where_opening_date_before_given_date_for_client(given_date, offset, limit)
-        if len(contract) == 0:
-            raise ContractNotFound
-        return [self.buildContractDto(c) for c in contract]
-
-    def get_contract_where_opening_date_after_given_date_for_client(self, given_date: date, offset: int, limit: int) \
-            -> List[ContractDto]:
-        """
-        This service filter contracts after given_date and order
-        by opening date
-        :param given_date: start date for filter
-        :param offset: start of pagination
-        :param limit: end of pagination
-        :return: List of Contract or throw an HTTPException 404
-        """
-        contract: List[SubscriberContract] = self.subscriber_contract_repository \
-            .get_contract_where_opening_date_after_given_date_for_client(given_date, offset, limit)
-        if len(contract) == 0:
-            raise ContractNotFound
-        return [self.buildContractDto(c) for c in contract]
-
-    def get_contract_where_opening_date_equal_given_date_for_client(self, given_date: date, offset: int, limit: int) \
-            -> List[ContractDto]:
-        """
-        This service filter the activated contract where the opening date is equal to the providing given_date and order
-        by opening date
-        :param given_date: given date to compare
-        :param offset: start of pagination
-        :param limit: end of pagination
-        :return: List Contract or throw an HTTPException 404
-        """
-        contract: List[SubscriberContract] = self.subscriber_contract_repository \
-            .get_contract_where_opening_date_equal_given_date_for_client(given_date, offset, limit)
-        if len(contract) == 0:
-            raise ContractNotFound
-        return [self.buildContractDto(c) for c in contract]
-
-    def get_contract_where_closing_date_before_given_date_for_client(self, given_date: date, offset: int, limit: int) \
-            -> List[ContractDto]:
-        """
-        This service filter activated contract where the closing is before the providing given_date and order
-        by closing date
-        :param given_date: given date to compare
-        :param offset: start of pagination
-        :param limit: end of pagination
-        :return: List Contract or throw an HTTPException 404
-        """
-        contract: List[SubscriberContract] = self.subscriber_contract_repository \
-            .get_contract_where_closing_date_before_given_date_for_client(
-            given_date,
-            offset,
-            limit
-        )
-        if len(contract) == 0:
-            raise ContractNotFound
-        return [self.buildContractDto(c) for c in contract]
-
-    def get_contract_where_closing_date_after_given_date_for_client(self, given_date: date, offset: int, limit: int) \
-            -> List[ContractDto]:
-        contract: List[SubscriberContract] = self.subscriber_contract_repository \
-            .get_contract_where_closing_date_after_given_date_for_client(
-            given_date,
-            offset,
-            limit
-        )
-        if len(contract) == 0:
-            raise ContractNotFound
-
-        return [self.buildContractDto(c) for c in contract]
-
-    def get_contract_where_closing_date_equal_given_date_for_client(self, given_date: date, offset: int, limit: int) \
-            -> List[ContractDto]:
-        """
-        This service filter activated contracts where the closing date is equal to the providing given_date and order
-        by closing date
-        :param given_date: given date to compare
-        :param offset: start of pagination
-        :param limit: end of pagination
-        :return: List SubscriberContract or throw an HTTPException 404
-        """
-        contract: List[SubscriberContract] = self.subscriber_contract_repository \
-            .get_contract_where_closing_date_equal_given_date_for_client(
-            given_date,
-            offset,
-            limit
-        )
-        if len(contract) == 0:
-            raise ContractNotFound
-        return [self.buildContractDto(c) for c in contract]
-
-    def get_contract_by_delivery_point_and_contact_uid_for_client(self, delivery_point: int, contact_uid: str) \
-            -> ContractDto:
-        """
-        This function filter an activated contract by the delivery point address and contact uid
-        :param delivery_point: unique address of delivery point
-        :param contact_uid: this is a unique contact number
-        :return: return an optional of SubscriberContract
-        """
-        contract: Optional[SubscriberContract] = self.subscriber_contract_repository \
-            .get_contract_by_delivery_point_and_contact_uid_for_client(
-            delivery_point,
-            contact_uid
-        )
-        if contract is None:
-            raise ContractNotFound
-        return self.buildContractDto(contract)
-
-    def get_contract_by_delivery_point(self, delivery_point: str) -> ContractDto:
-        """
-        This function filter an activated contract by the delivery point
-        :param delivery_point:  unique address of delivery point
-        :return: SubscriberContract
-        """
-        contract: SubscriberContract = self.subscriber_contract_repository \
-            .get_contract_by_delivery_point(delivery_point)
-        if contract is None:
-            raise ContractNotFound
-        return self.buildContractDto(contract)
-
     def get_contract_by_submitted_params(self,
                                          params: ContractDtoIncoming,
-                                         infos: SubscriberContractInfoForFilter,
-                                         agency: AgencyIncomingFilter,
                                          offset: int,
                                          limit: int,
 
@@ -535,23 +286,23 @@ class SubscriberContactService:
         :param params:
         :return:
         """
-        # infos = json.loads(infos.json())
-        filter_params = {}
-        if params.dict(exclude_none=True):
-            filter_params.update(params.dict(exclude_none=True))
-        print(params.dict(exclude_none=True).keys())
-        print(agency.dict(exclude_none=True).keys())
-
         # logging.warning("excluded id", params.dict(exclude_none=True).)
 
-        contract: List[SubscriberContract] = self.subscriber_contract_repository.\
+        contract: List[SubscriberContract] = self.subscriber_contract_repository. \
             get_contract_by_submitted_params(
             params,
-            infos,
-            agency,
             offset,
             limit
         )
         if len(contract) == 0:
             raise ContractNotFound
         return [self.buildContractDto(c) for c in contract]
+
+    def get_contracts(self, offset: int, limit: int, page_size: int) -> List[ContractDto]:
+        contracts = self.subscriber_contract_repository.get_contracts(
+            offset,
+            limit
+        )
+        if contracts is None:
+            raise ContractNotFound
+        return [self.buildContractDto(c) for c in contracts]
