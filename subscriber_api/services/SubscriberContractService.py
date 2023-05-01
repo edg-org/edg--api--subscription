@@ -70,9 +70,9 @@ class SubscriberContactService:
         if len(delivery_points) != len(contract_schema):
             raise RepeatingDeliveryPoint
 
-        contract: List[SubscriberContract] = [self.check_save_business_logic(c) for c in contract_schema]
-        contract = self.subscriber_contract_repository.create_contract(contract)
-        return [self.buildContractDto(c) for c in contract]
+        contracts: List[SubscriberContract] = [self.check_save_business_logic(c) for c in contract_schema]
+        contracts = self.subscriber_contract_repository.create_contract(contracts)
+        return [self.buildContractDto(c) for c in contracts]
 
     def check_save_business_logic(self, contract_schema: SubscriberContractSchema) -> SubscriberContract:
         """

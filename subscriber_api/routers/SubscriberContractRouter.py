@@ -80,6 +80,27 @@ def delete_contract(
 
 
 @SubscriberContractAPIRouter.get(
+    "/search",
+    response_model=List[ContractDto],
+    status_code=status.HTTP_200_OK,
+    summary="This endpoint filter contracts by the providing parameters",
+    description="This endpoint filter contracts by the providing parameters",
+
+)
+async def get_contract_by_submitted_params(
+        offset: int = 0,
+        limit: int = 10,
+        params: ContractDtoIncoming = Depends(),
+        contract_service: SubscriberContactService = Depends()
+):
+    return contract_service.get_contract_by_submitted_params(
+        params,
+        offset,
+        limit
+    )
+
+
+@SubscriberContractAPIRouter.get(
     path="/{number}",
     response_model=ContractDto,
     status_code=status.HTTP_200_OK,
@@ -105,24 +126,3 @@ async def get_contract_by_contract_uid_for_client(
         contract_service: SubscriberContactService = Depends()
 ):
     return contract_service.get_contract_by_contract_uid(contract_uid)
-
-
-@SubscriberContractAPIRouter.get(
-    "/search/",
-    response_model=List[ContractDto],
-    status_code=status.HTTP_200_OK,
-    summary="This endpoint filter contracts by the providing parameters",
-    description="This endpoint filter contracts by the providing parameters",
-
-)
-async def get_contract_by_submitted_params(
-        offset: int = 0,
-        limit: int = 10,
-        params: ContractDtoIncoming = Depends(),
-        contract_service: SubscriberContactService = Depends()
-):
-    return contract_service.get_contract_by_submitted_params(
-        params,
-        offset,
-        limit
-    )

@@ -3,7 +3,7 @@ from typing import List
 from fastapi import APIRouter, Depends
 
 from api.models.ContactsModel import Contacts
-from api.schemas.pydantic.ContactsSchema import ContactsSchema
+from api.schemas.pydantic.ContactsSchema import ContactOutputDto, ContactsInputDto
 from api.services.ContactsService import ContactsService
 
 ContactsRouter = APIRouter(
@@ -13,27 +13,29 @@ ContactsRouter = APIRouter(
 
 @ContactsRouter.post(
     "/",
+    response_model=List[ContactOutputDto],
     summary="create user",
     description="use this endpoint to create a new user"
 )
 def create_contact(
-        contact: ContactsSchema,
+        contact: List[ContactsInputDto],
         contact_service: ContactsService = Depends()
 ):
-    return contact_service.create_contact(contact).normalize()
+    return contact_service.create_contact(contact)
 
 
 @ContactsRouter.put(
     "/{pid}",
+    response_model=ContactOutputDto,
     summary="update user by pid",
     description="use this endpoint to update user infos"
 )
 def update_contact(
         pid: str,
-        contact: ContactsSchema,
+        contact: ContactsInputDto,
         contact_service: ContactsService = Depends()
 ):
-    return contact_service.update_contact(pid, contact).normalize()
+    return contact_service.update_contact(pid, contact)
 
 
 @ContactsRouter.delete(
@@ -50,6 +52,7 @@ def delete_contact(
 
 @ContactsRouter.get(
     "/phone",
+    response_model=ContactOutputDto,
     summary="search user by phone only for active account",
     description="This will display info only for active account"
 )
@@ -61,6 +64,7 @@ def get_contact_by_phone_for_client(
 
 @ContactsRouter.get(
     "/email",
+    response_model=ContactOutputDto,
     summary="search user by email only for active account",
     description="This will display info only for active account"
 )
@@ -72,6 +76,7 @@ def get_contact_by_email_for_client(
 
 @ContactsRouter.get(
     "",
+    response_model=List[ContactOutputDto],
     summary="search users for active account",
     description="This will display info only for active account"
 )
@@ -85,6 +90,7 @@ def get_contacts_for_client(
 
 @ContactsRouter.get(
     "/pid",
+    response_model=ContactOutputDto,
     summary="search user by pid only for active account",
     description="This will display info only for active account"
 )
@@ -92,11 +98,12 @@ def get_contact_by_pid_for_client(
         pid: str,
         contact_service: ContactsService = Depends()
 ):
-    return contact_service.get_contact_by_pid_for_client(pid).normalize()
+    return contact_service.get_contact_by_pid_for_client(pid)
 
 
 @ContactsRouter.get(
     "/contact-uid",
+    response_model=ContactOutputDto,
     summary="search user by contact unique number(uid) including delete or active",
     description="search user by contact unique number(uid) including delete or active"
 )
@@ -104,11 +111,12 @@ def get_contact_by_uid_for_client(
         contact_uid: str,
         contact_service: ContactsService = Depends()
 ):
-    return contact_service.get_contact_by_uid_for_client(contact_uid).normalize()
+    return contact_service.get_contact_by_uid_for_client(contact_uid)
 
 
 @ContactsRouter.get(
     "/id",
+    response_model=ContactOutputDto,
     summary="search user by his id in db only for active account",
     description="search user by his id in db only for active account"
 )
@@ -121,6 +129,7 @@ def get_contact_by_id_for_client(
 
 @ContactsRouter.get(
     "/contact-type",
+    response_model=List[ContactOutputDto],
     summary="search user by contact type only for active account",
     description="search user by contact type only for active account"
 )

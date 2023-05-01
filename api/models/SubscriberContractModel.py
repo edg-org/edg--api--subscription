@@ -13,8 +13,9 @@ class SubscriberContract(EntityMeta):
     id: Mapped[int] = mapped_column(primary_key=True)
     infos: Mapped[JSON] = mapped_column(JSON)
     customer_id: Mapped[int] = mapped_column(ForeignKey('contacts.id'))
+
     contacts: Mapped[List["Contacts"]] = relationship(
-        back_populates="subscriber_contract"
+        "Contacts", back_populates="subscriber_contract"
     )
 
     opening_date: Mapped[date] = mapped_column(nullable=True, default=None)
@@ -25,7 +26,6 @@ class SubscriberContract(EntityMeta):
     is_activated: Mapped[bool] = mapped_column(default=False)
     contract_uid: Mapped[str] = mapped_column(String(10))
     attachment: Mapped[dict] = mapped_column(JSON, default=None, nullable=True)
-    extend_existing = True
 
     def normalize(self):
         return {

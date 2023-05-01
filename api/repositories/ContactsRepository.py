@@ -19,11 +19,10 @@ class ContactsRepository:
     ) -> None:
         self.db = db
 
-    def create_contact(self, contact: Contacts) -> Contacts:
-        self.db.add(contact)
+    def create_contact(self, contacts: List[Contacts]) -> Contacts:
+        self.db.add_all(contacts)
         self.db.commit()
-        self.db.refresh(contact)
-        return contact
+        return contacts
 
     def update_contact(self, contacts: Contacts) -> Contacts:
         self.db.merge(contacts)
