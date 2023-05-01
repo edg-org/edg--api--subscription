@@ -1,7 +1,6 @@
 from fastapi import APIRouter, Depends
 
 from api.models.ContactsModel import Contacts
-from api.schemas.pydantic.ContactsSchema import ContactsSchema
 from api.services.ContactsService import ContactsService
 
 InvestigateContactRouter = APIRouter(

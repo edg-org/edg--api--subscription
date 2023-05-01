@@ -2,7 +2,6 @@ import json
 import logging
 from datetime import datetime, date
 
-
 from pydantic import BaseModel, validator, EmailStr, constr
 
 
@@ -53,8 +52,18 @@ class ContactInfos(BaseModel):
         if type_value.lower().capitalize() in ['Client', 'Prospect', 'Abonné']:
             return type_value
         raise ValueError("Invalid contact type, the contact type should by one "
-                             "of the following (Client, Abonné or Prospect)")
+                         "of the following (Client, Abonné or Prospect)")
 
 
-class ContactsSchema(BaseModel):
+class ContactsInputDto(BaseModel):
     infos: ContactInfos
+
+
+class ContactOutputDto(BaseModel):
+    id: int
+    infos: ContactInfos
+    is_activated: bool
+    contact_uid: str
+    created_at: date
+    updated_at: date | None
+    deleted_at: date | None
