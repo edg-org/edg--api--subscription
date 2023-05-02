@@ -2,14 +2,15 @@ import json
 import logging
 import random
 from datetime import date
-from typing import List, Optional
+from typing import List, Optional, Dict
 
 from fastapi import Depends
 from fastapi.encoders import jsonable_encoder
 from sqlalchemy import true
 
 from api.models.ContactsModel import Contacts
-from subscriber_api.models.SubscriberContractModel import SubscriberContract
+from api.models.SubscriberContractModel import SubscriberContract
+
 from api.services.ContactsService import ContactsService
 from subscriber_api.exceptions import ContractNotFound, DeleteContractException, ContactNotFound, \
     EditContactWhileNotOwner, ContractDisabled, ContractExist, ContractStatusError, RepeatingDeliveryPoint, \
@@ -18,10 +19,22 @@ from subscriber_api.exceptions import ContractNotFound, DeleteContractException,
 from subscriber_api.repositories.SubscriberContractRepository import SubscriberContractRepository
 from subscriber_api.schemas.SubscriberContractSchema import SubscriberContractSchema, ContractDtoIncoming, \
     SubscriberContractInfoForFilter, Agency, AgencyIncomingFilter, ContractDto, SubscriptionLevel, \
-    SubscriptionLevelIncomingFilter, ContractDtoForBillingMicroService, SubscriptionType
+    SubscriptionLevelIncomingFilter, ContractDtoForBillingMicroService, SubscriptionType, ContractDtoWithPagination
 from subscriber_api.services.GuidGenerator import GuidGenerator
 from subscriber_api.utilis.Status import Status
 
+
+def buildContractDtoWithPagination(contracts: List[ContractDto], page: int):
+    total: int = len(contracts)
+    page_size: int = 2
+    total_page = total // page_size if total % page_size == 0 else (total // page_size) + 1
+    return ContractDtoWithPagination(
+        total_page=total_page,
+        total=total,
+        page_size=page_size,
+        page=page,
+        data=contracts[(page - 1) * page_size:page * page_size]
+    )
 
 class SubscriberContactService:
     subscriber_contract_repository: SubscriberContractRepository
@@ -134,6 +147,11 @@ class SubscriberContactService:
             get_contact_by_id_for_client(contract_schema['customer_id'])
         if contact is None:
             raise ContactNotFound
+
+        logging.error("customer id %s", contact.normalize())
+
+        if not contract_exist.is_activated:
+            raise ContractDisabled
 
         # if the contract exist, but not associate to the contact, then we raise an exception
         if contract_exist is not None and contact.id != contract_exist.customer_id:
@@ -272,41 +290,31 @@ class SubscriberContactService:
         else:
             return None
 
-    def get_contract_by_submitted_params(self,
-                                         params: ContractDtoIncoming,
-                                         offset: int,
-                                         limit: int,
-
-                                         ) \
-            -> List[ContractDto]:
+    def get_contract_by_submitted_params(self, params: ContractDtoIncoming, page: int) -> ContractDtoWithPagination:
         """
         This function fileter a contract by submitted params
-        :param previous_level:
-        :param level:
-        :param agency:
-        :param infos:
-        :param limit:
-        :param offset:
+        :param page:
         :param params:
         :return:
         """
         # logging.warning("excluded id", params.dict(exclude_none=True).)
 
-        contract: List[SubscriberContract] = self.subscriber_contract_repository. \
-            get_contract_by_submitted_params(
-            params,
-            offset,
-            limit
-        )
-        if len(contract) == 0:
+        contracts: List[SubscriberContract] = self.subscriber_contract_repository. \
+            get_contract_by_submitted_params(params)
+        if len(contracts) == 0:
             raise ContractNotFound
-        return [self.buildContractDto(c) for c in contract]
+        return buildContractDtoWithPagination(contracts, page)
 
-    def get_contracts(self, offset: int, limit: int, page_size: int) -> List[ContractDto]:
-        contracts = self.subscriber_contract_repository.get_contracts(
-            offset,
-            limit
-        )
-        if contracts is None:
+    def get_contracts(self, page: int) -> ContractDtoWithPagination:
+        contracts = self.subscriber_contract_repository.get_contracts()
+        if len(contracts) == 0:
             raise ContractNotFound
-        return [self.buildContractDto(c) for c in contracts]
+        return buildContractDtoWithPagination(contracts, page)
+
+    def get_contract_by_contact_number(self, contact_number: str, page: int) -> ContractDtoWithPagination:
+        contracts = self.subscriber_contract_repository.get_contract_by_contact_number(contact_number)
+        if len(contracts) == 0:
+            raise ContractNotFound
+        contracts = [self.buildContractDto(c) for c in contracts]
+        return buildContractDtoWithPagination(contracts, page)
+

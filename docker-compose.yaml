@@ -1,9 +1,12 @@
 version: '3'
+networks:
+  backend:
+    driver: bridge
 services:
   app:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: ./api/Dockerfile
       args:
         PYTHON_TAG: "3.10"
         GH_USER: edg-org
@@ -13,8 +16,11 @@ services:
     env_file:
       - api/.env
     restart: on-failure
+    networks:
+      - backend
     depends_on:
       - db
+
   db:
     image: mysql:8.0
     ports:
@@ -28,5 +34,7 @@ services:
       MYSQL_USER: authuser
       MYSQL_PASSWORD: authuser
     restart: always
+    networks:
+      - backend
 volumes:
   mysql_data:

@@ -8,7 +8,8 @@ from typing import List, Optional
 from fastapi import Depends, HTTPException
 from sqlalchemy import String
 
-from api.exceptions import RepeatingIdentityPid, PhoneNumberExist, EmailExist, IdentityPidExist, IdentityPidNotFound
+from api.exceptions import RepeatingIdentityPid, PhoneNumberExist, EmailExist, IdentityPidExist, IdentityPidNotFound, \
+    ContactNotFound
 from api.models.ContactsModel import Contacts
 from api.repositories.ContactsRepository import ContactsRepository
 from api.schemas.pydantic.ContactsSchema import ContactsInputDto, ContactOutputDto
@@ -94,23 +95,20 @@ class ContactsService:
             raise IdentityPidNotFound
         if checkIdentity is not None:
             if checkIdentity.infos['identity']['pid'] != pid:
-                raise HTTPException(status_code=400, detail="The submitted pid is already used by another user, please "
-                                                            "provide a correct one")
+                raise IdentityPidExist
         # Pendant la modification nous verifions si le numero modifie n'existe pas dans la bd
         contactByPhone: Contacts = self.contacts_repository.get_contact_by_phone_for_admin(
             contact_body.infos['address']['telephone'])
         if contactByPhone is not None:
             if contactByPhone.contact_uid != contact.contact_uid:
-                raise HTTPException(status_code=400, detail="This phone number is already used by another user, "
-                                                            "please provide an other")
+                raise PhoneNumberExist
 
         # Pendant la modification nous verifions si l'email modifie n'existe pas dans la bd
         contactByEmail: Contacts = self.contacts_repository.get_contact_by_email_for_admin(
             contact_body.infos['address']['email'])
         if contactByEmail is not None:
             if contactByEmail.contact_uid != contact.contact_uid:
-                raise HTTPException(status_code=400, detail="This email is already used by another user, please "
-                                                            "provide an other")
+                raise EmailExist
 
         return buildContractOutputDto(self.contacts_repository.update_contact(
             Contacts(
@@ -127,71 +125,68 @@ class ContactsService:
     def delete_contact(self, pid: str) -> None:
         contact = self.contacts_repository.get_contact_by_pid_for_client(pid)
         if contact is None:
-            raise HTTPException(status_code=404, detail="The user pid is does not exist, the operation cannot be "
-                                                        "achieved")
+            raise IdentityPidNotFound
         contact.is_activated = False
         contact.deleted_at = date.today()
         self.contacts_repository.delete_contact(
             contact
         )
 
-    def get_contact_by_id_for_admin(self, id: int) -> Optional[ContactOutputDto]:
-        return self.contacts_repository.get_contact_by_id_for_admin(
-            id
-        )
+    def get_contact_by_id_for_admin(self, id: int) -> ContactOutputDto:
+        c: Contacts = self.contacts_repository.get_contact_by_id_for_admin(id)
+        if c is None:
+            raise ContactNotFound
+        return buildContractOutputDto(c)
 
     def get_contact_by_pid_for_admin(self, pid: str) -> ContactOutputDto:
         c = self.contacts_repository.get_contact_by_pid_for_admin(pid)
         if c is not None:
             return buildContractOutputDto(c)
         else:
-            raise HTTPException(status_code=404, detail="We didn't found user with the submitted pid")
+            raise ContactNotFound
 
     def get_contact_by_pid_for_client(self, pid: str) -> ContactOutputDto:
         c = self.contacts_repository.get_contact_by_pid_for_client(pid)
         if c is not None:
             return buildContractOutputDto(c)
         else:
-            raise HTTPException(status_code=404, detail="We didn't found user with the submitted pid")
+            raise ContactNotFound
 
     def get_contacts_for_admin(self, offset: int, limit: int) -> List[ContactOutputDto]:
         contacts: List[Contacts] = self.contacts_repository.get_contacts_for_admin(offset, limit)
-        if len(contacts) == 0:
+        if len(contacts) != 0:
             return [buildContractOutputDto(c) for c in contacts]
         else:
-            raise HTTPException(status_code=404, detail="We didn't found any user")
+            raise ContactNotFound
 
     def get_contacts_for_client(self, offset: int, limit: int) -> List[ContactOutputDto]:
         contacts: List[Contacts] = self.contacts_repository.get_contacts_for_client(offset, limit)
-        if len(contacts) == 0:
+        if len(contacts) != 0:
             return [buildContractOutputDto(c) for c in contacts]
         else:
-            raise HTTPException(status_code=404, detail="We didn't found any user")
+            raise ContactNotFound
 
-    def get_contact_by_email_for_admin(self, email: str) -> Contacts:
+    def get_contact_by_email_for_admin(self, email: str) -> ContactOutputDto:
         c = self.contacts_repository.get_contact_by_email_for_admin(email)
         if c is not None:
-            return c
+            return buildContractOutputDto(c)
         else:
-            raise HTTPException(status_code=404, detail="we didn't found any user with this email , please make sure "
-                                                        "that you provide a correct email ")
+            raise EmailExist
 
     def get_contact_by_email_for_client(self, email: str) -> ContactOutputDto:
         c = self.contacts_repository.get_contact_by_email_for_client(email)
         if c is not None:
-            return c
+            return buildContractOutputDto(c)
         else:
-            raise HTTPException(status_code=404, detail="we didn't found any user with this email , please make sure "
-                                                        "that you provide a correct email ")
+            raise ContactNotFound
 
     def get_contact_by_phone_for_admin(self, telephone: str) -> ContactOutputDto:
         # logging.error(f" phone format %s ", self.phoneNumberFormat(telephone))
         c = self.contacts_repository.get_contact_by_phone_for_admin(self.phoneNumberFormat(telephone))
         if c is not None:
-            return c
+            return buildContractOutputDto(c)
         else:
-            raise HTTPException(status_code=404, detail="we didn't found any user with this phone number , please "
-                                                        "make sure that you provide a correct phone number")
+            raise ContactNotFound
 
     """ Cette fonction nous permet de formater le numero de telephone au format
         Guineen +224-610-15-96-20, pour etre utilise pour les fins de comparaison avec 
@@ -202,10 +197,9 @@ class ContactsService:
         # logging.error(f" phone format %s ", self.phoneNumberFormat(telephone))
         c = self.contacts_repository.get_contact_by_phone_for_client(self.phoneNumberFormat(telephone))
         if c is not None:
-            return c
+            return buildContractOutputDto(c)
         else:
-            raise HTTPException(status_code=404, detail="we didn't found any user with this phone number , please "
-                                                        "make sure that you provide a correct phone number")
+            raise ContactNotFound
 
     def phoneNumberFormat(self, phoneNumber: str) -> String:
         if phoneNumber.startswith("+224") and not re.compile("^\+224-\d{3}-\d{2}-\d{2}-\d{2}$").match(phoneNumber):
@@ -220,29 +214,29 @@ class ContactsService:
     def get_contact_by_uid_for_client(self, contact_uid: str) -> ContactOutputDto:
         c = self.contacts_repository.get_contact_by_uid_for_client(contact_uid)
         if c is None:
-            raise HTTPException(status_code=404, detail="We didn't found any user with the user's ID")
-        return c
+            raise ContactNotFound
+        return buildContractOutputDto(c)
 
     def get_contact_by_uid_for_admin(self, contact_uid: str) -> ContactOutputDto:
         c = self.contacts_repository.get_contact_by_uid_for_admin(contact_uid)
         if c is None:
-            raise HTTPException(status_code=404, detail="We didn't found any user with the user's ID")
-        return c
+            raise ContactNotFound
+        return buildContractOutputDto(c)
 
     def get_contact_by_id_for_client(self, id: int) -> ContactOutputDto:
         c = self.contacts_repository.get_contact_by_id_for_client(id)
         if c is None:
-            raise HTTPException(status_code=404, detail="We didn't found any user with the provided id")
-        return c
+            raise ContactNotFound
+        return buildContractOutputDto(c)
 
     def get_contact_by_type_for_admin(self, contact_type: str, offset: int, limit: int) -> List[ContactOutputDto]:
         contacts: List[Contacts] = self.contacts_repository.get_contact_by_type_for_admin(contact_type, offset, limit)
         if len(contacts) == 0:
-            raise HTTPException(status_code=404, detail="We didn't found any user with the provided contact type")
+            raise ContactNotFound
         return [buildContractOutputDto(c) for c in contacts]
 
     def get_contact_by_type_for_client(self, contact_type: str, offset: int, limit: int) -> List[ContactOutputDto]:
         contacts: List[Contacts] = self.contacts_repository.get_contact_by_type_for_client(contact_type, offset, limit)
         if len(contacts) == 0:
-            raise HTTPException(status_code=404, detail="We didn't found any user with the provided contact type")
+            raise ContactNotFound
         return [buildContractOutputDto(c) for c in contacts]

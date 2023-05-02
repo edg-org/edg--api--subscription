@@ -39,3 +39,11 @@ class IdentityPidNotFound(HTTPException):
             status_code=status.HTTP_404_NOT_FOUND,
             detail="The user you trying to update does not exist, the operation cannot be achieved"
         )
+
+
+class ContactNotFound(HTTPException):
+    def __init__(self):
+        super().__init__(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Contact does not found"
+        )

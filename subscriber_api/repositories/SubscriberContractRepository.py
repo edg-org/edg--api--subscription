@@ -6,7 +6,8 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from api.models.ContactsModel import Contacts
-from subscriber_api.models.SubscriberContractModel import SubscriberContract
+from api.models.SubscriberContractModel import SubscriberContract
+
 from subscriber_api.configs.Database import get_db_connection
 from subscriber_api.schemas.SubscriberContractSchema import ContractDtoIncoming, SubscriberContractInfoForFilter, \
     Agency, AgencyIncomingFilter, SubscriptionLevel, SubscriptionLevelIncomingFilter, SubscriptionType
@@ -104,82 +105,6 @@ class SubscriberContractRepository:
             SubscriberContract.contract_uid.ilike(contract_uid.lower())
         )).first()
 
-    def get_contact_by_opening_date_for_client(
-            self,
-            opening_date: date,
-            offset: int,
-            limit: int
-    ) -> List[SubscriberContract]:
-        """
-        This function fetch all activated(is_activated is equal to True) contracts according to the providing to
-        the date when the contract is opened
-        :param opening_date: the date when the contract is opened (format yyyy-mm-dd)
-        :param offset: start pagination
-        :param limit: end pagination
-        :return: List of SubscriberContract
-        """
-        return self.db.scalars(select(SubscriberContract).where(
-            SubscriberContract.opening_date == opening_date,
-            SubscriberContract.is_activated == False
-        ).offset(offset).limit(limit)).all()
-
-    def get_contact_by_opening_date_for_admin(
-            self,
-            opening_date: date,
-            offset: int,
-            limit: int
-    ) -> List[SubscriberContract]:
-        """
-        This function  fetch all activated and not resigned contract (is_activated is equal to True or False)
-        contracts according to the providing to
-        the date when the contract is opened
-        :param opening_date:
-        :param offset:
-        :param limit:
-        :return: List of SubscriberContract
-        """
-        return self.db.scalars(select(SubscriberContract).where(
-            SubscriberContract.opening_date == opening_date
-        ).offset(offset).limit(limit)).all()
-
-    def get_contact_by_closing_date_for_client(
-            self,
-            closing_date: date,
-            offset: int,
-            limit: int
-    ) -> List[SubscriberContract]:
-        """
-        This function fetch all activated(is_activated is equal to True) contracts according to the providing to
-        the date when the contract is opened
-        :param closing_date: the date when the contract is opened (format yyyy-mm-dd)
-        :param offset: start pagination
-        :param limit: end pagination
-        :return: List of SubscriberContract
-        """
-        return self.db.scalars(select(SubscriberContract).where(
-            SubscriberContract.closing_date == closing_date,
-            SubscriberContract.is_activated == True
-        ).offset(offset).limit(limit)).all()
-
-    def get_contact_by_closing_date_for_admin(
-            self,
-            closing_date: date,
-            offset: int,
-            limit: int
-    ) -> List[SubscriberContract]:
-        """
-        This function  fetch all activated and not resigned contract (is_activated is equal to True or False)
-        contracts according to the providing to
-        the date when the contract is opened
-        :param closing_date: the date when the contract is opened (format yyyy-mm-dd)
-        :param offset:
-        :param limit:
-        :return: List of SubscriberContract
-        """
-        return self.db.scalars(select(SubscriberContract).where(
-            SubscriberContract.closing_date == closing_date
-        ).offset(offset).limit(limit)).all()
-
     def get_contract_by_contact_uid_and_contract_uid_for_client(self, contract_uid: str, contact_uid: str) \
             -> SubscriberContract:
         """
@@ -275,311 +200,6 @@ class SubscriberContractRepository:
             SubscriberContract.is_activated == False
         ).offset(offset).limit(limit)).all()
 
-    def get_contract_by_contact_id_and_sort_contract_by_opening_date_for_admin(self, contact_id: int, offset: int,
-                                                                               limit: int) \
-            -> List[SubscriberContract]:
-        """
-        This function filter by contact id and sort by opening date
-        :param contact_id: contact id from db
-        :param offset: start pagination
-        :param limit: end of pagination
-        :return: List SubscriberContract
-        """
-        return self.db.scalars(select(SubscriberContract)
-                               .join(SubscriberContract.contacts)
-                               .where(SubscriberContract.customer_id == contact_id)
-                               .offset(offset)
-                               .limit(limit)
-                               .order_by(SubscriberContract.opening_date)
-                               ).all()
-
-    def get_contract_by_contract_id_and_order_by_opening_date_for_client(self, contact_id: int, offset: int, limit: int) \
-            -> List[SubscriberContract]:
-        """
-        This function filter contract by contact id and sort by opening date
-        :param contact_id: contact id from db
-        :param offset: start pagination
-        :param limit: end of pagination
-        :return: List SubscriberContract
-        """
-        return self.db.scalars(select(SubscriberContract)
-                               .join(SubscriberContract.contacts)
-                               .where(
-            SubscriberContract.customer_id == contact_id,
-            SubscriberContract.is_activated == True
-        )
-                               .offset(offset)
-                               .limit(limit)
-                               .order_by(SubscriberContract.opening_date)
-                               ).all()
-
-    def get_contract_where_opening_date_between_two_dates_for_admin(self, start_date: date, end_date: date, offset: int,
-                                                                    limit: int) \
-            -> List[SubscriberContract]:
-        """
-        This function filter contracts where the opening date between two date
-        :param start_date: start date for filter
-        :param end_date: end date
-        :param offset: start of pagination
-        :param limit: end of pagination
-        :return: List of SubscriberContract
-        """
-        return self.db.scalars(select(SubscriberContract)
-                               .where(
-            SubscriberContract.opening_date > start_date,
-            SubscriberContract.opening_date < end_date
-        )
-                               .order_by(SubscriberContract.opening_date)
-                               .offset(offset)
-                               .limit(limit)
-                               ).all()
-
-    def get_contract_where_opening_date_between_two_dates_for_client(self, start_date: date, end_date: date,
-                                                                     offset: int, limit: int) \
-            -> List[SubscriberContract]:
-        """
-        This function filter contracts where the opening date between two dates
-        :param start_date: start date for filter
-        :param end_date: end date
-        :param offset: start of pagination
-        :param limit: end of pagination
-        :return: List of SubscriberContract
-        """
-        return self.db.scalars(select(SubscriberContract)
-                               .where(
-            SubscriberContract.opening_date > start_date,
-            SubscriberContract.opening_date < end_date,
-            SubscriberContract.is_activated == True
-        )
-                               .order_by(SubscriberContract.opening_date)
-                               .offset(offset)
-                               .limit(limit)
-                               ).all()
-
-    def get_contract_where_opening_date_before_given_date_for_admin(self, given_date: date,
-                                                                    offset: int, limit: int) \
-            -> List[SubscriberContract]:
-        """
-        This function filter contracts before start_date and order
-        by opening date
-        :param given_date: start date for filter
-        :param offset: start of pagination
-        :param limit: end of pagination
-        :return: List of SubscriberContract
-        """
-        return self.db.scalars(select(SubscriberContract)
-                               .where(SubscriberContract.opening_date < given_date)
-                               .order_by(SubscriberContract.opening_date)
-                               .offset(offset)
-                               .limit(limit)
-                               ).all()
-
-    def get_contract_where_opening_date_before_given_date_for_client(self, given_date: date,
-                                                                     offset: int, limit: int) \
-            -> List[SubscriberContract]:
-        """
-        This function filter contracts before given_date and order
-        by opening date
-        :param given_date: given date for filter
-        :param offset: start of pagination
-        :param limit: end of pagination
-        :return: List of SubscriberContract
-        """
-        return self.db.scalars(select(SubscriberContract)
-                               .where(
-            SubscriberContract.opening_date < given_date,
-            SubscriberContract.is_activated == True
-        )
-                               .order_by(SubscriberContract.opening_date)
-                               .offset(offset)
-                               .limit(limit)
-                               ).all()
-
-    def get_contract_where_opening_date_after_given_date_for_admin(self, given_date: date, offset: int, limit: int) \
-            -> List[SubscriberContract]:
-        """
-        This function filter contracts before end_date and order
-        by opening date
-        :param given_date: start date for filter
-        :param offset: start of pagination
-        :param limit: end of pagination
-        :return: List of SubscriberContract
-        """
-        return self.db.scalars(select(SubscriberContract)
-                               .where(SubscriberContract.opening_date > given_date)
-                               .order_by(SubscriberContract.opening_date)
-                               .offset(offset)
-                               .limit(limit)
-                               ).all()
-
-    def get_contract_where_opening_date_after_given_date_for_client(self, given_date: date, offset: int, limit: int) \
-            -> List[SubscriberContract]:
-        """
-        This function filter contracts after given_date and order
-        by opening date
-        :param given_date: start date for filter
-        :param offset: start of pagination
-        :param limit: end of pagination
-        :return: List of SubscriberContract
-        """
-        return self.db.scalars(select(SubscriberContract)
-                               .where(
-            SubscriberContract.opening_date > given_date,
-            SubscriberContract.is_activated == True
-        )
-                               .order_by(SubscriberContract.opening_date)
-                               .offset(offset)
-                               .limit(limit)
-                               ).all()
-
-    def get_contract_where_opening_date_equal_given_date_for_admin(self, given_date: date, offset: int, limit: int) \
-            -> List[SubscriberContract]:
-        """
-        This function filter the contract where the opening date is equal to the providing given_date and order
-        by opening date
-        :param given_date: given date to compare
-        :param offset: start of pagination
-        :param limit: end of pagination
-        :return: List SubscriberContract
-        """
-        return self.db.scalars(select(SubscriberContract)
-                               .where(SubscriberContract.opening_date == given_date)
-                               .order_by(SubscriberContract.opening_date)
-                               .offset(offset)
-                               .limit(limit)
-                               ).all()
-
-    def get_contract_where_opening_date_equal_given_date_for_client(self, given_date: date, offset: int, limit: int) \
-            -> List[SubscriberContract]:
-        """
-        This function filter the activated contract where the opening date is equal to the providing given_date and order
-        by opening date
-        :param given_date: given date to compare
-        :param offset: start of pagination
-        :param limit: end of pagination
-        :return: List SubscriberContract
-        """
-        return self.db.scalars(select(SubscriberContract)
-                               .where(
-            SubscriberContract.opening_date == given_date,
-            SubscriberContract.is_activated == True
-        )
-                               .order_by(SubscriberContract.opening_date)
-                               .offset(offset)
-                               .limit(limit)
-                               ).all()
-
-    def get_contract_where_closing_date_before_given_date_for_admin(self, given_date: date, offset: int, limit: int) \
-            -> List[SubscriberContract]:
-        """
-        This function filter the contract where the closing is before the providing given_date and order
-        by closing date
-        :param given_date: given date to compare
-        :param offset: start of pagination
-        :param limit: end of pagination
-        :return: List SubscriberContract
-        """
-        return self.db.scalars(select(SubscriberContract)
-                               .where(SubscriberContract.closing_date < given_date)
-                               .order_by(SubscriberContract.closing_date)
-                               .offset(offset)
-                               .limit(limit)
-                               ).all()
-
-    def get_contract_where_closing_date_before_given_date_for_client(self, given_date: date, offset: int, limit: int) \
-            -> List[SubscriberContract]:
-        """
-        This function filter activated contract where the closing is before the providing given_date and order
-        by closing date
-        :param given_date: given date to compare
-        :param offset: start of pagination
-        :param limit: end of pagination
-        :return: List Contract
-        """
-        return self.db.scalars(select(SubscriberContract)
-                               .where(
-            SubscriberContract.closing_date < given_date,
-            SubscriberContract.is_activated == True
-        )
-                               .order_by(SubscriberContract.closing_date)
-                               .offset(offset)
-                               .limit(limit)
-                               ).all()
-
-    def get_contract_where_closing_date_after_given_date_for_admin(self, given_date: date, offset: int, limit: int) \
-            -> List[SubscriberContract]:
-        """
-         This function filter the contract where the closing date is after  the providing given_date and order
-        by closing date
-        :param given_date: given date to compare
-        :param offset: start of pagination
-        :param limit: end of pagination
-        :return: List SubscriberContract
-        """
-        return self.db.scalars(select(SubscriberContract)
-                               .where(SubscriberContract.closing_date > given_date)
-                               .order_by(SubscriberContract.closing_date)
-                               .offset(offset)
-                               .limit(limit)
-                               ).all()
-
-    def get_contract_where_closing_date_after_given_date_for_client(self, given_date: date, offset: int, limit: int) \
-            -> List[SubscriberContract]:
-        """
-         This function filter the contract where the closing date is after  the providing given_date and order
-        by closing date
-        :param given_date: given date to compare
-        :param offset: start of pagination
-        :param limit: end of pagination
-        :return: List SubscriberContract
-        """
-        return self.db.scalars(select(SubscriberContract)
-                               .where(
-            SubscriberContract.closing_date > given_date,
-            SubscriberContract.is_activated == True
-        )
-                               .order_by(SubscriberContract.closing_date)
-                               .offset(offset)
-                               .limit(limit)
-                               ).all()
-
-    def get_contract_where_closing_date_equal_given_date_for_admin(self, given_date: date, offset: int, limit: int) \
-            -> List[SubscriberContract]:
-        """
-         This function filter the contract where the closing date is equal to the providing given_date and order
-        by closing date
-        :param given_date: given date to compare
-        :param offset: start of pagination
-        :param limit: end of pagination
-        :return: List SubscriberContract
-        """
-        return self.db.scalars(select(SubscriberContract)
-                               .where(SubscriberContract.closing_date == given_date)
-                               .order_by(SubscriberContract.closing_date)
-                               .offset(offset)
-                               .limit(limit)
-                               ).all()
-
-    def get_contract_where_closing_date_equal_given_date_for_client(self, given_date: date, offset: int, limit: int) \
-            -> List[SubscriberContract]:
-        """
-        This function filter activated contracts where the closing date is equal to the providing given_date and order
-        by closing date
-        :param given_date: given date to compare
-        :param offset: start of pagination
-        :param limit: end of pagination
-        :return: List SubscriberContract
-        """
-        return self.db.scalars(select(SubscriberContract)
-                               .where(
-            SubscriberContract.closing_date == given_date,
-            SubscriberContract.is_activated == True
-        )
-                               .order_by(SubscriberContract.closing_date)
-                               .offset(offset)
-                               .limit(limit)
-                               ).all()
-
     def get_contract_by_delivery_point_and_contact_uid_for_client(self, delivery_point: int, contact_uid: str) \
             -> Optional[SubscriberContract]:
         """
@@ -605,17 +225,9 @@ class SubscriberContractRepository:
             # SubscriberContract.is_activated ==True
         )).first()
 
-    def get_contract_by_submitted_params(self,
-                                         params: ContractDtoIncoming,
-                                         offset: int,
-                                         limit: int) \
-            -> List[SubscriberContract]:
+    def get_contract_by_submitted_params(self, params: ContractDtoIncoming) -> List[SubscriberContract]:
         """
         This function fileter a contract by submitted params
-        :param agency:
-        :param infos:
-        :param limit:
-        :param offset:
         :param params:
         :return:
         """
@@ -627,8 +239,13 @@ class SubscriberContractRepository:
                 Contacts.contact_uid == params.customer_number
                 if params.customer_number is not None else True
             )
-            .offset(offset).limit(limit)
+            .order_by(SubscriberContract.id)
         ).all()
 
-    def get_contracts(self, offset: int, limit: int) -> List[SubscriberContract]:
-        return self.db.scalars(select(SubscriberContract).offset(offset).limit(limit)).all()
+    def get_contracts(self) -> List[SubscriberContract]:
+        return self.db.scalars(select(SubscriberContract).order_by(SubscriberContract.id)).all()
+
+    def get_contract_by_contact_number(self, contact_number: str) -> List[SubscriberContract]:
+        return self.db.scalars(select(SubscriberContract).join(Contacts).where(
+            Contacts.contact_uid.ilike(contact_number), SubscriberContract.is_activated == True
+        ).order_by(SubscriberContract.id)).all();
