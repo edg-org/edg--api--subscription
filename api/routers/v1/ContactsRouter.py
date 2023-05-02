@@ -116,7 +116,7 @@ def get_contact_by_uid_for_client(
 
 @ContactsRouter.get(
     "/id",
-    response_model=ContactOutputDto,
+    response_model=ContactOutputDto | None,
     summary="search user by his id in db only for active account",
     description="search user by his id in db only for active account"
 )

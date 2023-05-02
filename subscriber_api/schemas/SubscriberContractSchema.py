@@ -247,6 +247,14 @@ class ContractDto(BaseModel):
         orm_mode = True
 
 
+class ContractDtoWithPagination(BaseModel):
+    total: int
+    page_size: int
+    total_page: int
+    page: int
+    data: List[ContractDto]
+
+
 class ContractDtoIncoming(BaseModel):
     id: int | None
     customer_number: str | None = Field(description=OpenAPIFieldDescription.CUSTOMER_ID)

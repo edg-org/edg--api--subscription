@@ -6,7 +6,8 @@ from fastapi import APIRouter, Depends, status, Form
 from api.metadata.Tags import Tags
 from subscriber_api.schemas.SubscriberContractSchema import ContractDto, \
     SubscriberContractSchema, ContractDtoIncoming, SubscriberContractInfoForFilter, Agency, AgencyIncomingFilter, \
-    SubscriptionLevel, SubscriptionLevelIncomingFilter, ContractDtoForBillingMicroService, SubscriptionType
+    SubscriptionLevel, SubscriptionLevelIncomingFilter, ContractDtoForBillingMicroService, SubscriptionType, \
+    ContractDtoWithPagination
 
 from subscriber_api.services.SubscriberContractService import SubscriberContactService
 from subscriber_api.utilis.JWTBearer import JWTBearer
@@ -81,22 +82,20 @@ def delete_contract(
 
 @SubscriberContractAPIRouter.get(
     "/search",
-    response_model=List[ContractDto],
+    response_model=ContractDtoWithPagination,
     status_code=status.HTTP_200_OK,
     summary="This endpoint filter contracts by the providing parameters",
     description="This endpoint filter contracts by the providing parameters",
 
 )
 async def get_contract_by_submitted_params(
-        offset: int = 0,
-        limit: int = 10,
+        page: int = 1,
         params: ContractDtoIncoming = Depends(),
         contract_service: SubscriberContactService = Depends()
 ):
     return contract_service.get_contract_by_submitted_params(
         params,
-        offset,
-        limit
+        page
     )
 
 

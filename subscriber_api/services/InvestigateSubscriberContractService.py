@@ -3,7 +3,7 @@ from typing import List, Optional
 
 from fastapi import HTTPException, status, Depends
 
-from subscriber_api.models.SubscriberContractModel import SubscriberContract
+from api.models.SubscriberContractModel import SubscriberContract
 from api.services.ContactsService import ContactsService
 from subscriber_api.exceptions import ContractNotFound
 from subscriber_api.repositories.SubscriberContractRepository import SubscriberContractRepository

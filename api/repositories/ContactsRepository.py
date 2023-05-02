@@ -34,12 +34,11 @@ class ContactsRepository:
         self.db.commit()
 
     def get_contact_by_id_for_client(self, id: int) -> Contacts:
-        query = select(Contacts).where(Contacts.id == id, Contacts.is_activated == True)
-        return self.db.scalars(query).first()
+        return self.db.scalars(select(Contacts).where(Contacts.id == id, Contacts.is_activated == True)).first()
 
     def get_contact_by_id_for_admin(self, id: int) -> Contacts:
         query = select(Contacts).where(Contacts.id == id)
-        return self.db.scalars(query).first()
+        return self.db.scalars(select(Contacts).where(Contacts.id == id)).first()
 
     def get_contact_by_pid_for_admin(self, pid: str) -> Contacts:
         return self.db.scalars(select(Contacts).where(

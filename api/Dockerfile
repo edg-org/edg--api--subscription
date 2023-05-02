@@ -1,13 +1,14 @@
 ARG PYTHON_TAG="3.10"
 ARG GH_USER=soulbah
 ARG GH_REPO=REPO
+
 FROM python:${PYTHON_TAG} AS builder
 
 RUN pip install --user pipenv
 
 ENV PIPENV_VENV_IN_PROJECT=1
 
-ADD Pipfile.lock Pipfile /app/
+ADD ../Pipfile.lock ../Pipfile /app/
 
 WORKDIR /app
 
@@ -22,4 +23,5 @@ RUN apt-get update && apt-get install -y default-libmysqlclient-dev \
 
 COPY --from=builder /usr/local/lib/python3.10/site-packages /usr/local/lib/python3.10/site-packages
 
-COPY api /app/api
+
+COPY . /app/api

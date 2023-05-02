@@ -1,6 +1,9 @@
+from typing import List
+
 from fastapi import APIRouter, Depends
 
 from api.models.ContactsModel import Contacts
+from api.schemas.pydantic.ContactsSchema import ContactOutputDto
 from api.services.ContactsService import ContactsService
 
 InvestigateContactRouter = APIRouter(
@@ -10,6 +13,7 @@ InvestigateContactRouter = APIRouter(
 
 @InvestigateContactRouter.get(
     "/pid",
+    response_model=ContactOutputDto,
     summary="search user by pid including delete or active",
     description="search user by pid including delete or active"
 )
@@ -21,7 +25,9 @@ def get_contact_by_pid(
 
 
 @InvestigateContactRouter.get(
-    "", summary="fetch all contact including deleted end active ",
+    "",
+    response_model=List[ContactOutputDto],
+    summary="fetch all contact including deleted end active ",
     description="fetch all contact including deleted end active"
 )
 def get_contacts(
@@ -34,6 +40,7 @@ def get_contacts(
 
 @InvestigateContactRouter.get(
     "/email",
+    response_model=ContactOutputDto,
     summary="search user by email including delete or active",
     description="search user email pid including delete or active"
 )
@@ -45,6 +52,7 @@ def get_contact_by_email(
 
 @InvestigateContactRouter.get(
     "/phone",
+    response_model=ContactOutputDto,
     summary="search user by phone number including delete or active",
     description="search user by phone number including delete or active"
 )
@@ -56,6 +64,7 @@ def get_contact_by_phone(
 
 @InvestigateContactRouter.get(
     "/contact-uid",
+    response_model=ContactOutputDto,
     summary="search user by contact unique number(uid) including delete or active",
     description="search user by contact unique number(uid) including delete or active"
 )
@@ -63,11 +72,12 @@ def get_contact_by_uid_for_admin(
         contact_uid: str,
         contact_service: ContactsService = Depends()
 ):
-    return contact_service.get_contact_by_uid_for_admin(contact_uid).normalize()
+    return contact_service.get_contact_by_uid_for_admin(contact_uid)
 
 
 @InvestigateContactRouter.get(
     "/id",
+    response_model=ContactOutputDto,
     summary="search user by his id in db including delete or active",
     description="search user by his id in db including delete or active"
 )
@@ -80,6 +90,7 @@ def get_contact_by_id_for_admin(
 
 @InvestigateContactRouter.get(
     "/contact-type",
+    response_model=List[ContactOutputDto],
     summary="search user by contact type only for active account",
     description="search user by contact type only for active account"
 )

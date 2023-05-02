@@ -55,15 +55,50 @@ class ContactInfos(BaseModel):
                          "of the following (Client, Abonné or Prospect)")
 
 
+
+class IdentityOutput(BaseModel):
+    type: str
+    pid: str
+    given_date: date
+    expire_date: date
+
+class ContactInfosOutput(BaseModel):
+    type: str
+    name: str
+    firstname: str
+    birthday: date
+    job: str
+    identity: IdentityOutput
+    address: Address
+
+    @validator('birthday')
+    def check_age(cls, value):
+        today = date.today()
+        age = today.year - value.year - ((today.month, today.day) < (value.month, value.day))
+        if age < 18:
+            raise ValueError("You should be over the age of 18")
+        return value
+
+    @validator('type', allow_reuse=True)
+    def validateType(cls, type_value: str):
+        if type_value.lower().capitalize() in ['Client', 'Prospect', 'Abonné']:
+            return type_value
+        raise ValueError("Invalid contact type, the contact type should by one "
+                         "of the following (Client, Abonné or Prospect)")
+
+
+
 class ContactsInputDto(BaseModel):
     infos: ContactInfos
 
 
 class ContactOutputDto(BaseModel):
     id: int
-    infos: ContactInfos
+    infos: ContactInfosOutput
     is_activated: bool
     contact_uid: str
     created_at: date
     updated_at: date | None
     deleted_at: date | None
+
+
