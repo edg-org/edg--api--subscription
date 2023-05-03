@@ -11,6 +11,7 @@ uvicorn = {extras = ["standard"], version = "==0.17.6"}
 python-dotenv = "==0.20.0"
 email-validator="==1.0.3"
 pydantic = "==1.10.6"
+requests = "==2.29.0"
 
 [dev-packages]
 pre-commit = "==2.18.1"

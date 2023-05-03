@@ -10,15 +10,15 @@ from api.contact.models.ContactsModel import Contacts
 from api.contact.models.SubscriberContractModel import SubscriberContract
 
 from api.contact.services.ContactsService import ContactsService
-from subscriber_api.exceptions import ContractNotFound, DeleteContractException, ContactNotFound, \
+from api.subscriber_api.exceptions import ContractNotFound, DeleteContractException, ContactNotFound, \
     EditContactWhileNotOwner, ContractDisabled, ContractExist, ContractStatusError, RepeatingDeliveryPoint, \
     ContractLevelError
 
-from subscriber_api.repositories.SubscriberContractRepository import SubscriberContractRepository
-from subscriber_api.schemas.SubscriberContractSchema import SubscriberContractSchema, ContractDtoIncoming, \
+from api.subscriber_api.repositories.SubscriberContractRepository import SubscriberContractRepository
+from api.subscriber_api.schemas.SubscriberContractSchema import SubscriberContractSchema, ContractDtoIncoming, \
     ContractDto, ContractDtoForBillingMicroService, ContractDtoWithPagination
-from subscriber_api.services.GuidGenerator import GuidGenerator
-from subscriber_api.utilis.Status import Status
+from api.subscriber_api.services.GuidGenerator import GuidGenerator
+from api.subscriber_api.utilis.Status import Status
 
 
 def buildContractDtoWithPagination(contracts: List[ContractDto], page: int):

@@ -1,9 +1,9 @@
 from datetime import date
-from typing import Optional, Dict, List
+from typing import List
 
 from pydantic import BaseModel, Field
 
-from subscriber_api.constant import OpenAPIFieldDescription
+from api.subscriber_api.constant import OpenAPIFieldDescription
 
 
 class SubscriptionLevel(BaseModel):

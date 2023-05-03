@@ -1,11 +1,11 @@
 import json
 import logging
 from unittest import TestCase
-from unittest.mock import create_autospec, patch, Mock, MagicMock
+from unittest.mock import create_autospec, patch, Mock
 
-from api.repositories import ContactsRepository
-from api.schemas.pydantic.ContactsSchema import ContactsSchema, ContactInfos
-from api.services.ContactsService import ContactsService
+from api.contact.repositories import ContactsRepository
+from api.contact.schemas.pydantic import ContactInfos
+from api.contact.services.ContactsService import ContactsService
 
 
 class TestContactService(TestCase):

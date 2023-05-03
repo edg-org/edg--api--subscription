@@ -5,9 +5,9 @@ from fastapi import HTTPException, status, Depends
 
 from api.contact.models.SubscriberContractModel import SubscriberContract
 from api.contact.services.ContactsService import ContactsService
-from subscriber_api.exceptions import ContractNotFound
-from subscriber_api.repositories.SubscriberContractRepository import SubscriberContractRepository
-from subscriber_api.schemas.SubscriberContractSchema import ContractDto
+from api.subscriber_api.exceptions import ContractNotFound
+from api.subscriber_api.repositories.SubscriberContractRepository import SubscriberContractRepository
+from api.subscriber_api.schemas.SubscriberContractSchema import ContractDto
 
 
 class InvestigateSubscriberContractService:

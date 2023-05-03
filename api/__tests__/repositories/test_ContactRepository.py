@@ -1,11 +1,10 @@
 import json
-from datetime import datetime
 from unittest import TestCase
-from unittest.mock import create_autospec, Mock, patch
+from unittest.mock import create_autospec, patch
 
 from sqlalchemy.orm import Session
 
-from api.repositories.ContactsRepository import ContactsRepository
+from api.contact.repositories.ContactsRepository import ContactsRepository
 
 
 class TestContactRepository(TestCase):

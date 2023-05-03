@@ -4,8 +4,8 @@ from unittest.mock import create_autospec, Mock, patch
 
 from api.contact.repositories.ContactsRepository import ContactsRepository
 from api.contact.services.ContactsService import ContactsService
-from subscriber_api.repositories.SubscriberContractRepository import SubscriberContractRepository
-from subscriber_api.services.SubscriberContractService import SubscriberContactService
+from api.subscriber_api.repositories.SubscriberContractRepository import SubscriberContractRepository
+from api.subscriber_api.services.SubscriberContractService import SubscriberContactService
 
 
 def loadJson():

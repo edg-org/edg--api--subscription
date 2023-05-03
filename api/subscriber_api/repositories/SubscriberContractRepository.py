@@ -7,8 +7,8 @@ from sqlalchemy.orm import Session
 from api.contact.models.ContactsModel import Contacts
 from api.contact.models.SubscriberContractModel import SubscriberContract
 
-from subscriber_api.configs.Database import get_db_connection
-from subscriber_api.schemas.SubscriberContractSchema import ContractDtoIncoming
+from api.subscriber_api.configs.Database import get_db_connection
+from api.subscriber_api.schemas.SubscriberContractSchema import ContractDtoIncoming
 
 
 class SubscriberContractRepository:

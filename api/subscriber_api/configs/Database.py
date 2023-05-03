@@ -1,9 +1,7 @@
-import logging
-
 from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
 
-from subscriber_api.configs.Environment import get_environment_variables
+from api.subscriber_api.configs.Environment import get_environment_variables
 
 # Runtime Environment Configuration
 env = get_environment_variables()

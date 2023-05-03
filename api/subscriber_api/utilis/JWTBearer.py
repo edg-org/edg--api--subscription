@@ -1,4 +1,3 @@
-import json
 import logging
 
 from fastapi import Request, HTTPException, status
@@ -6,7 +5,7 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
 # from subscriber_api.configs.Environment import get_environment_variables
 
-from subscriber_api.services.RequestMaster import RequestMaster
+from api.subscriber_api.services.RequestMaster import RequestMaster
 
 
 class JWTBearer(HTTPBearer):
