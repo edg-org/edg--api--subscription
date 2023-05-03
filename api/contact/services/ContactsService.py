@@ -11,19 +11,20 @@ from api.exceptions import RepeatingIdentityPid, PhoneNumberExist, EmailExist, I
     ContactNotFound
 from api.contact.models.ContactsModel import Contacts
 from api.contact.repositories.ContactsRepository import ContactsRepository
-from api.contact.schemas.pydantic.ContactsSchema import ContactsInputDto, ContactOutputDto
+from api.contact.schemas.pydantic.ContactsSchema import ContactsInputDto, ContactOutputDto, ContactDtoWithPagination
 from api.contact.services.GuidGenerator import GuidGenerator
 
 
-def buildContractOutputDto(contact: Contacts):
-    return ContactOutputDto(
-        id=contact.id,
-        infos=contact.infos,
-        is_activated=contact.is_activated,
-        contact_uid=contact.contact_uid,
-        created_at=contact.created_at,
-        updated_at=contact.updated_at,
-        deleted_at=contact.deleted_at
+def buildContactOutputDtoWithPagination(contacts: List[ContactOutputDto], page: int):
+    total: int = len(contacts)
+    page_size: int = 2
+    total_page = total // page_size if total % page_size == 0 else (total // page_size) + 1
+    return ContactDtoWithPagination(
+        total_page=total_page,
+        total=total,
+        page_size=page_size,
+        page=page,
+        data=contacts[(page - 1) * page_size:page * page_size]
     )
 
 
@@ -37,12 +38,10 @@ class ContactsService:
         # Convertissons notre object en json
 
         # Transform contract_schema to a list
-        logging.error("message %s", type(contact_body))
+
         contact_body = [c.infos.dict() for c in contact_body]
-        logging.error("message %s", contact_body)
-        logging.error("message %s", type(contact_body))
+
         contact_body = json.loads(json.dumps(contact_body, default=str))
-        logging.error("sd %s ", contact_body)
 
         # Check if there are repeating identity pid, if true, then the len of identity_pid will be different
         # to the len of contact_body
@@ -55,7 +54,7 @@ class ContactsService:
         contacts: List[Contacts] = [self.check_save_business_logic(c) for c in contact_body]
         contacts = self.contacts_repository.create_contact(contacts)
 
-        return [buildContractOutputDto(c) for c in contacts]
+        return [self.buildContractOutputDto(c) for c in contacts]
 
     def check_save_business_logic(self, contact_body: ContactsInputDto) -> Contacts:
         # contact_body = json.loads(contact_body.json())
@@ -109,7 +108,7 @@ class ContactsService:
             if contactByEmail.contact_uid != contact.contact_uid:
                 raise EmailExist
 
-        return buildContractOutputDto(self.contacts_repository.update_contact(
+        return self.buildContractOutputDto(self.contacts_repository.update_contact(
             Contacts(
                 infos=contact_body.infos,
                 updated_at=date.today(),
@@ -135,47 +134,47 @@ class ContactsService:
         c: Contacts = self.contacts_repository.get_contact_by_id_for_admin(id)
         if c is None:
             raise ContactNotFound
-        return buildContractOutputDto(c)
+        return self.buildContractOutputDto(c)
 
     def get_contact_by_pid_for_admin(self, pid: str) -> ContactOutputDto:
         c = self.contacts_repository.get_contact_by_pid_for_admin(pid)
         if c is not None:
-            return buildContractOutputDto(c)
+            return self.buildContractOutputDto(c)
         else:
             raise ContactNotFound
 
     def get_contact_by_pid_for_client(self, pid: str) -> ContactOutputDto:
         c = self.contacts_repository.get_contact_by_pid_for_client(pid)
         if c is not None:
-            return buildContractOutputDto(c)
+            return self.buildContractOutputDto(c)
         else:
             raise ContactNotFound
 
-    def get_contacts_for_admin(self, offset: int, limit: int) -> List[ContactOutputDto]:
-        contacts: List[Contacts] = self.contacts_repository.get_contacts_for_admin(offset, limit)
+    def get_contacts_for_admin(self, page: int) -> ContactDtoWithPagination:
+        contacts: List[Contacts] = self.contacts_repository.get_contacts_for_admin()
         if len(contacts) != 0:
-            return [buildContractOutputDto(c) for c in contacts]
+            return buildContactOutputDtoWithPagination([self.buildContractOutputDto(c) for c in contacts], page)
         else:
             raise ContactNotFound
 
-    def get_contacts_for_client(self, offset: int, limit: int) -> List[ContactOutputDto]:
-        contacts: List[Contacts] = self.contacts_repository.get_contacts_for_client(offset, limit)
+    def get_contacts_for_client(self, page: int) -> ContactDtoWithPagination:
+        contacts: List[Contacts] = self.contacts_repository.get_contacts_for_client()
         if len(contacts) != 0:
-            return [buildContractOutputDto(c) for c in contacts]
+            return buildContactOutputDtoWithPagination([self.buildContractOutputDto(c) for c in contacts], page)
         else:
             raise ContactNotFound
 
     def get_contact_by_email_for_admin(self, email: str) -> ContactOutputDto:
         c = self.contacts_repository.get_contact_by_email_for_admin(email)
         if c is not None:
-            return buildContractOutputDto(c)
+            return self.buildContractOutputDto(c)
         else:
             raise EmailExist
 
     def get_contact_by_email_for_client(self, email: str) -> ContactOutputDto:
         c = self.contacts_repository.get_contact_by_email_for_client(email)
         if c is not None:
-            return buildContractOutputDto(c)
+            return self.buildContractOutputDto(c)
         else:
             raise ContactNotFound
 
@@ -183,7 +182,7 @@ class ContactsService:
         # logging.error(f" phone format %s ", self.phoneNumberFormat(telephone))
         c = self.contacts_repository.get_contact_by_phone_for_admin(self.phoneNumberFormat(telephone))
         if c is not None:
-            return buildContractOutputDto(c)
+            return self.buildContractOutputDto(c)
         else:
             raise ContactNotFound
 
@@ -196,7 +195,7 @@ class ContactsService:
         # logging.error(f" phone format %s ", self.phoneNumberFormat(telephone))
         c = self.contacts_repository.get_contact_by_phone_for_client(self.phoneNumberFormat(telephone))
         if c is not None:
-            return buildContractOutputDto(c)
+            return self.buildContractOutputDto(c)
         else:
             raise ContactNotFound
 
@@ -214,28 +213,39 @@ class ContactsService:
         c = self.contacts_repository.get_contact_by_uid_for_client(contact_uid)
         if c is None:
             raise ContactNotFound
-        return buildContractOutputDto(c)
+        return self.buildContractOutputDto(c)
 
     def get_contact_by_uid_for_admin(self, contact_uid: str) -> ContactOutputDto:
         c = self.contacts_repository.get_contact_by_uid_for_admin(contact_uid)
         if c is None:
             raise ContactNotFound
-        return buildContractOutputDto(c)
+        return self.buildContractOutputDto(c)
 
     def get_contact_by_id_for_client(self, id: int) -> ContactOutputDto:
         c = self.contacts_repository.get_contact_by_id_for_client(id)
         if c is None:
             raise ContactNotFound
-        return buildContractOutputDto(c)
+        return self.buildContractOutputDto(c)
 
     def get_contact_by_type_for_admin(self, contact_type: str, offset: int, limit: int) -> List[ContactOutputDto]:
         contacts: List[Contacts] = self.contacts_repository.get_contact_by_type_for_admin(contact_type, offset, limit)
         if len(contacts) == 0:
             raise ContactNotFound
-        return [buildContractOutputDto(c) for c in contacts]
+        return [self.buildContractOutputDto(c) for c in contacts]
 
     def get_contact_by_type_for_client(self, contact_type: str, offset: int, limit: int) -> List[ContactOutputDto]:
         contacts: List[Contacts] = self.contacts_repository.get_contact_by_type_for_client(contact_type, offset, limit)
         if len(contacts) == 0:
             raise ContactNotFound
-        return [buildContractOutputDto(c) for c in contacts]
+        return [self.buildContractOutputDto(c) for c in contacts]
+
+    def buildContractOutputDto(self, contact: Contacts):
+        return ContactOutputDto(
+            id=contact.id,
+            infos=contact.infos,
+            is_activated=contact.is_activated,
+            contact_uid=contact.contact_uid,
+            created_at=contact.created_at,
+            updated_at=contact.updated_at,
+            deleted_at=contact.deleted_at
+        )

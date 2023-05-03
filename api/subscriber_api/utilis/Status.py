@@ -1,3 +1,0 @@
-
-class Status:
-    INITIAL = "Initial"

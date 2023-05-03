@@ -6,7 +6,7 @@ services:
   app:
     build:
       context: .
-      dockerfile: ./api/Dockerfile
+      dockerfile: Dockerfile
       args:
         PYTHON_TAG: "3.10"
         GH_USER: edg-org

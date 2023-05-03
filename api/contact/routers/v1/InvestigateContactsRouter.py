@@ -2,7 +2,7 @@ from typing import List
 
 from fastapi import APIRouter, Depends
 
-from api.contact.schemas.pydantic.ContactsSchema import ContactOutputDto
+from api.contact.schemas.pydantic.ContactsSchema import ContactOutputDto, ContactDtoWithPagination
 from api.contact.services.ContactsService import ContactsService
 
 InvestigateContactRouter = APIRouter(
@@ -25,16 +25,15 @@ def get_contact_by_pid(
 
 @InvestigateContactRouter.get(
     "",
-    response_model=List[ContactOutputDto],
+    response_model=ContactDtoWithPagination,
     summary="fetch all contact including deleted end active ",
     description="fetch all contact including deleted end active"
 )
 def get_contacts(
-        offset: int,
-        limit: int,
+        page: int,
         contact_service: ContactsService = Depends()
 ):
-    return contact_service.get_contacts_for_admin(offset, limit)
+    return contact_service.get_contacts_for_admin(page)
 
 
 @InvestigateContactRouter.get(

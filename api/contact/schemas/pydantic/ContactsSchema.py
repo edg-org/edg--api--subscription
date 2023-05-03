@@ -1,6 +1,7 @@
 import json
 import logging
 from datetime import datetime, date
+from typing import List
 
 from pydantic import BaseModel, validator, EmailStr, constr
 
@@ -55,12 +56,12 @@ class ContactInfos(BaseModel):
                          "of the following (Client, Abonné or Prospect)")
 
 
-
 class IdentityOutput(BaseModel):
     type: str
     pid: str
     given_date: date
     expire_date: date
+
 
 class ContactInfosOutput(BaseModel):
     type: str
@@ -87,18 +88,23 @@ class ContactInfosOutput(BaseModel):
                          "of the following (Client, Abonné or Prospect)")
 
 
-
 class ContactsInputDto(BaseModel):
     infos: ContactInfos
 
 
 class ContactOutputDto(BaseModel):
-    id: int
-    infos: ContactInfosOutput
-    is_activated: bool
-    contact_uid: str
-    created_at: date
+    id: int | None
+    infos: ContactInfosOutput | None
+    is_activated: bool | None
+    contact_uid: str | None
+    created_at: date | None
     updated_at: date | None
     deleted_at: date | None
 
 
+class ContactDtoWithPagination(BaseModel):
+    total: int
+    page_size: int
+    total_page: int
+    page: int
+    data: List[ContactOutputDto]
