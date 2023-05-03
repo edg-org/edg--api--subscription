@@ -53,7 +53,7 @@ class TestContactRepository(TestCase):
         self.session.scalars.assert_called_once()
 
     def test_get_contacts_for_admin(self):
-        self.contacts_repository.get_contacts_for_admin(0, 4)
+        self.contacts_repository.get_contacts_for_admin()
         self.session.scalars.assert_called_once()
 
     def test_get_contact_by_pid_for_client(self):
@@ -70,7 +70,7 @@ class TestContactRepository(TestCase):
         self.session.scalars.assert_called_once()
 
     def test_get_contacts_for_client(self):
-        self.contacts_repository.get_contacts_for_client(0, 4)
+        self.contacts_repository.get_contacts_for_client()
         self.session.scalars.assert_called_once()
 
     def test_get_contacts_by_type_for_client(self):
