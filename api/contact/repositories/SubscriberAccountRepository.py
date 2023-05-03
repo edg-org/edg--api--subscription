@@ -1,13 +1,12 @@
 from datetime import datetime
-from typing import Any
 
 from fastapi import Depends
-from sqlalchemy import select, Select
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from api.configs.Database import get_db_connection
-from api.schemas.pydantic.SubscriberAccountSchema import SubscriberAccountSchema, SubscriberAccountRead
-from api.models.SubscriberAccountModel import SubscriberAccount
+from api.contact.schemas.pydantic import SubscriberAccountRead
+from api.contact.models import SubscriberAccount
 
 
 class SubscriberAccountRepository:

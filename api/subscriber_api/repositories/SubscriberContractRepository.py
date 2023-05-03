@@ -1,16 +1,14 @@
-from datetime import date
 from typing import List, Optional
 
 from fastapi import Depends
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from api.models.ContactsModel import Contacts
-from api.models.SubscriberContractModel import SubscriberContract
+from api.contact.models.ContactsModel import Contacts
+from api.contact.models.SubscriberContractModel import SubscriberContract
 
 from subscriber_api.configs.Database import get_db_connection
-from subscriber_api.schemas.SubscriberContractSchema import ContractDtoIncoming, SubscriberContractInfoForFilter, \
-    Agency, AgencyIncomingFilter, SubscriptionLevel, SubscriptionLevelIncomingFilter, SubscriptionType
+from subscriber_api.schemas.SubscriberContractSchema import ContractDtoIncoming
 
 
 class SubscriberContractRepository:

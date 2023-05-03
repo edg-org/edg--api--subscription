@@ -5,9 +5,7 @@ from unittest.mock import create_autospec, patch, Mock
 
 from sqlalchemy.orm import Session
 
-from api.services.ContactsService import ContactsService
 from subscriber_api.repositories.SubscriberContractRepository import SubscriberContractRepository
-from subscriber_api.schemas.SubscriberContractSchema import ContractDtoIncoming
 from subscriber_api.services.GuidGenerator import GuidGenerator
 
 

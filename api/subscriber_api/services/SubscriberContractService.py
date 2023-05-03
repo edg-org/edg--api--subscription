@@ -1,25 +1,22 @@
 import json
 import logging
-import random
 from datetime import date
-from typing import List, Optional, Dict
+from typing import List
 
 from fastapi import Depends
 from fastapi.encoders import jsonable_encoder
-from sqlalchemy import true
 
-from api.models.ContactsModel import Contacts
-from api.models.SubscriberContractModel import SubscriberContract
+from api.contact.models.ContactsModel import Contacts
+from api.contact.models.SubscriberContractModel import SubscriberContract
 
-from api.services.ContactsService import ContactsService
+from api.contact.services.ContactsService import ContactsService
 from subscriber_api.exceptions import ContractNotFound, DeleteContractException, ContactNotFound, \
     EditContactWhileNotOwner, ContractDisabled, ContractExist, ContractStatusError, RepeatingDeliveryPoint, \
     ContractLevelError
 
 from subscriber_api.repositories.SubscriberContractRepository import SubscriberContractRepository
 from subscriber_api.schemas.SubscriberContractSchema import SubscriberContractSchema, ContractDtoIncoming, \
-    SubscriberContractInfoForFilter, Agency, AgencyIncomingFilter, ContractDto, SubscriptionLevel, \
-    SubscriptionLevelIncomingFilter, ContractDtoForBillingMicroService, SubscriptionType, ContractDtoWithPagination
+    ContractDto, ContractDtoForBillingMicroService, ContractDtoWithPagination
 from subscriber_api.services.GuidGenerator import GuidGenerator
 from subscriber_api.utilis.Status import Status
 

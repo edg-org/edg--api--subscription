@@ -2,7 +2,6 @@ from typing import List
 
 from fastapi import APIRouter, Depends
 
-from api.models.ContactsModel import Contacts
 from api.schemas.pydantic.ContactsSchema import ContactOutputDto
 from api.services.ContactsService import ContactsService
 
