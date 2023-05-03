@@ -1,15 +1,10 @@
 import json
-from typing import List
 from unittest import TestCase
 from unittest.mock import create_autospec, Mock, patch
 
-from sqlalchemy import true
-
-from api.repositories.ContactsRepository import ContactsRepository
-from api.services.ContactsService import ContactsService
-from api.services.GuidGenerator import GuidGenerator
+from api.contact.repositories.ContactsRepository import ContactsRepository
+from api.contact.services.ContactsService import ContactsService
 from subscriber_api.repositories.SubscriberContractRepository import SubscriberContractRepository
-from subscriber_api.services import SubscriberContractService
 from subscriber_api.services.SubscriberContractService import SubscriberContactService
 
 

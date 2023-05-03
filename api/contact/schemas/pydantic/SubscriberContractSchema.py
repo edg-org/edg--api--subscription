@@ -1,10 +1,10 @@
 import decimal
 from datetime import datetime
-from typing import Dict, List, Optional
+from typing import Dict
 
 from pydantic import BaseModel
 
-from api.models.ContactsModel import Contacts
+from api.contact.models.ContactsModel import Contacts
 
 
 class SubscriberContractSchema(BaseModel):

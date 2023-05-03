@@ -1,14 +1,11 @@
-import datetime
-import json
-import string
-from typing import Dict, Optional, List, cast, Sequence
+from typing import List
 
 from fastapi import Depends
-from sqlalchemy import select, String, Row, Sequence
-from sqlalchemy.orm import Session, lazyload
+from sqlalchemy import select
+from sqlalchemy.orm import Session
 
 from api.configs.Database import get_db_connection
-from api.models.ContactsModel import Contacts
+from api.contact.models.ContactsModel import Contacts
 
 
 class ContactsRepository:

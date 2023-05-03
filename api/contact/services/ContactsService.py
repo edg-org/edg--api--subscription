@@ -1,16 +1,15 @@
 import json
 import logging
 import re
-from dataclasses import asdict
 from datetime import date
-from typing import List, Optional
+from typing import List
 
-from fastapi import Depends, HTTPException
+from fastapi import Depends
 from sqlalchemy import String
 
 from api.exceptions import RepeatingIdentityPid, PhoneNumberExist, EmailExist, IdentityPidExist, IdentityPidNotFound, \
     ContactNotFound
-from api.models.ContactsModel import Contacts
+from api.contact.models.ContactsModel import Contacts
 from api.repositories.ContactsRepository import ContactsRepository
 from api.schemas.pydantic.ContactsSchema import ContactsInputDto, ContactOutputDto
 from api.services.GuidGenerator import GuidGenerator
