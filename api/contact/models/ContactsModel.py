@@ -9,8 +9,8 @@ from sqlalchemy.dialects.mysql import JSON
 
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from api.models.BaseModel import EntityMeta
-from api.models.SubscriberContractModel import SubscriberContract
+from api.contact.models.BaseModel import EntityMeta
+from api.contact.models.SubscriberContractModel import SubscriberContract
 
 
 class Contacts(EntityMeta):

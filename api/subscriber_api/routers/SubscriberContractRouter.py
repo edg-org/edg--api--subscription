@@ -1,16 +1,11 @@
-from datetime import date
 from typing import List
 
-from fastapi import APIRouter, Depends, status, Form
+from fastapi import APIRouter, Depends, status
 
-from api.metadata.Tags import Tags
-from subscriber_api.schemas.SubscriberContractSchema import ContractDto, \
-    SubscriberContractSchema, ContractDtoIncoming, SubscriberContractInfoForFilter, Agency, AgencyIncomingFilter, \
-    SubscriptionLevel, SubscriptionLevelIncomingFilter, ContractDtoForBillingMicroService, SubscriptionType, \
-    ContractDtoWithPagination
+from api.subscriber_api.schemas.SubscriberContractSchema import ContractDto, \
+    SubscriberContractSchema, ContractDtoIncoming, ContractDtoWithPagination
 
-from subscriber_api.services.SubscriberContractService import SubscriberContactService
-from subscriber_api.utilis.JWTBearer import JWTBearer
+from api.subscriber_api.services.SubscriberContractService import SubscriberContactService
 
 SubscriberContractAPIRouter: APIRouter = APIRouter(
     prefix="/v1/subscriptions",

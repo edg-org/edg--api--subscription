@@ -8,7 +8,7 @@ RUN pip install --user pipenv
 
 ENV PIPENV_VENV_IN_PROJECT=1
 
-ADD ../Pipfile.lock ../Pipfile /app/
+ADD ../../Pipfile.lock ../Pipfile /app/
 
 WORKDIR /app
 

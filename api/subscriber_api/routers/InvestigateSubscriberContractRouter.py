@@ -1,11 +1,8 @@
-from datetime import date
-from typing import List
-
 from fastapi import APIRouter, Depends, status
 
-from subscriber_api.schemas.SubscriberContractSchema import ContractDto, ContractDtoWithPagination
-from subscriber_api.services.SubscriberContractService import SubscriberContactService
-from subscriber_api.utilis.JWTBearer import JWTBearer
+from api.subscriber_api.schemas.SubscriberContractSchema import ContractDtoWithPagination
+from api.subscriber_api.services.SubscriberContractService import SubscriberContactService
+from api.subscriber_api.utilis.JWTBearer import JWTBearer
 
 InvestigateContractRouter: APIRouter = APIRouter(
     prefix="/v1/customers",

@@ -10,9 +10,9 @@ from sqlalchemy import String
 from api.exceptions import RepeatingIdentityPid, PhoneNumberExist, EmailExist, IdentityPidExist, IdentityPidNotFound, \
     ContactNotFound
 from api.contact.models.ContactsModel import Contacts
-from api.repositories.ContactsRepository import ContactsRepository
-from api.schemas.pydantic.ContactsSchema import ContactsInputDto, ContactOutputDto
-from api.services.GuidGenerator import GuidGenerator
+from api.contact.repositories.ContactsRepository import ContactsRepository
+from api.contact.schemas.pydantic.ContactsSchema import ContactsInputDto, ContactOutputDto
+from api.contact.services.GuidGenerator import GuidGenerator
 
 
 def buildContractOutputDto(contact: Contacts):

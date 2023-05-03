@@ -2,8 +2,8 @@ from typing import List
 
 from fastapi import APIRouter, Depends
 
-from api.schemas.pydantic.ContactsSchema import ContactOutputDto, ContactsInputDto
-from api.services.ContactsService import ContactsService
+from api.contact.schemas.pydantic.ContactsSchema import ContactOutputDto, ContactsInputDto
+from api.contact.services.ContactsService import ContactsService
 
 ContactsRouter = APIRouter(
     prefix="/v1/contacts", tags=["contacts"]

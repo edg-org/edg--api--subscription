@@ -1,10 +1,10 @@
-from datetime import datetime, date
+from datetime import date
 from typing import List
 
-from sqlalchemy import JSON, ForeignKey, DECIMAL, String
+from sqlalchemy import JSON, ForeignKey, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from api.models.BaseModel import EntityMeta
+from api.contact.models.BaseModel import EntityMeta
 
 
 class SubscriberContract(EntityMeta):

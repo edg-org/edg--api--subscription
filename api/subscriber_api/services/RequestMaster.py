@@ -1,14 +1,6 @@
-import logging
-from http import client
-from numbers import Number
-from typing import Any
-from wsgiref import headers
-
 import requests
 from fastapi import HTTPException, status
 from fastapi.openapi.models import Response
-
-from subscriber_api.schemas.ParseScope import ParseScope
 
 
 class RequestMaster:
