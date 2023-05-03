@@ -2,7 +2,7 @@ from typing import List
 
 from fastapi import APIRouter, Depends
 
-from api.contact.schemas.pydantic.ContactsSchema import ContactOutputDto, ContactsInputDto
+from api.contact.schemas.pydantic.ContactsSchema import ContactOutputDto, ContactsInputDto, ContactDtoWithPagination
 from api.contact.services.ContactsService import ContactsService
 
 ContactsRouter = APIRouter(
@@ -75,16 +75,15 @@ def get_contact_by_email_for_client(
 
 @ContactsRouter.get(
     "",
-    response_model=List[ContactOutputDto],
+    response_model=ContactDtoWithPagination,
     summary="search users for active account",
     description="This will display info only for active account"
 )
 def get_contacts_for_client(
-        offset: int,
-        limit: int,
+        page: int,
         contact_service: ContactsService = Depends()
 ):
-    return contact_service.get_contacts_for_client(offset, limit)
+    return contact_service.get_contacts_for_client(page)
 
 
 @ContactsRouter.get(
@@ -101,16 +100,16 @@ def get_contact_by_pid_for_client(
 
 
 @ContactsRouter.get(
-    "/contact-uid",
+    "/number",
     response_model=ContactOutputDto,
     summary="search user by contact unique number(uid) including delete or active",
     description="search user by contact unique number(uid) including delete or active"
 )
 def get_contact_by_uid_for_client(
-        contact_uid: str,
+        number: str,
         contact_service: ContactsService = Depends()
 ):
-    return contact_service.get_contact_by_uid_for_client(contact_uid)
+    return contact_service.get_contact_by_uid_for_client(number)
 
 
 @ContactsRouter.get(
@@ -127,7 +126,7 @@ def get_contact_by_id_for_client(
 
 
 @ContactsRouter.get(
-    "/contact-type",
+    "/type",
     response_model=List[ContactOutputDto],
     summary="search user by contact type only for active account",
     description="search user by contact type only for active account"

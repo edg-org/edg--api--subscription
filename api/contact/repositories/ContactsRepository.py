@@ -42,8 +42,8 @@ class ContactsRepository:
             Contacts.infos['identity']['pid'] == pid
         )).first()
 
-    def get_contacts_for_admin(self, offset: int = 0, limit: int = 10) -> List[Contacts]:
-        return self.db.scalars(select(Contacts).offset(offset).limit(limit)).all()
+    def get_contacts_for_admin(self) -> List[Contacts]:
+        return self.db.scalars(select(Contacts).order_by(Contacts.id)).all()
 
     def get_contact_by_email_for_admin(self, email: str) -> Contacts:
         return self.db.scalars(select(Contacts).where(
@@ -67,8 +67,8 @@ class ContactsRepository:
             Contacts.is_activated == True
         )).first()
 
-    def get_contacts_for_client(self, offset: int, limit: int) -> List[Contacts]:
-        return self.db.scalars(select(Contacts).where(Contacts.is_activated == True).offset(offset).limit(limit)).all()
+    def get_contacts_for_client(self) -> List[Contacts]:
+        return self.db.scalars(select(Contacts).where(Contacts.is_activated == True).order_by(Contacts.id)).all()
 
     def get_contact_by_email_for_client(self, email: str) -> Contacts:
         return self.db.scalars(select(Contacts).where(

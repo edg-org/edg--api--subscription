@@ -9,9 +9,11 @@ env = get_environment_variables()
 # Generate Database URL
 DATABASE_URL = f"{env.DATABASE_DIALECT}://{env.DATABASE_USERNAME}:{env.DATABASE_PASSWORD}@{env.DATABASE_HOSTNAME}:{env.DATABASE_PORT}/{env.DATABASE_NAME}"
 
+#DATABASE_URL = "mysql://authuser:authuser@127.0.0.1:3306/testdb"
+
 # Create Database Engine
 Engine = create_engine(
-    DATABASE_URL, echo=env.DEBUG_MODE, future=True
+    DATABASE_URL, echo=True, future=True
 )
 
 SessionLocal = sessionmaker(
