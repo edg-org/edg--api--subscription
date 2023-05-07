@@ -6,7 +6,7 @@ from api.contact.schemas.pydantic.ContactsSchema import ContactOutputDto, Contac
 from api.contact.services.ContactsService import ContactsService
 
 ContactsRouter = APIRouter(
-    prefix="/v1/contacts", tags=["contacts"]
+    prefix="/v1/customers", tags=["contacts"]
 )
 
 
