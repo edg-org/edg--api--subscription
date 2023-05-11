@@ -1,31 +1,19 @@
 import json
 import logging
 import re
-from datetime import date
+from datetime import date, datetime
 from typing import List
 
 from fastapi import Depends
 from sqlalchemy import String
 
 from api.exceptions import RepeatingIdentityPid, PhoneNumberExist, EmailExist, IdentityPidExist, IdentityPidNotFound, \
-    ContactNotFound
+    ContactNotFound, RepeatingEmail, RepeatingPhoneNumber, SearchParamError, ContactIsDisable
 from api.contact.models.ContactsModel import Contacts
 from api.contact.repositories.ContactsRepository import ContactsRepository
-from api.contact.schemas.pydantic.ContactsSchema import ContactsInputDto, ContactOutputDto, ContactDtoWithPagination
+from api.contact.schemas.pydantic.ContactsSchema import ContactsInputDto, ContactOutputDto, ContactDtoWithPagination, \
+    SearchByParams, SearchAllContact
 from api.contact.services.GuidGenerator import GuidGenerator
-
-
-def buildContactOutputDtoWithPagination(contacts: List[ContactOutputDto], page: int):
-    total: int = len(contacts)
-    page_size: int = 2
-    total_page = total // page_size if total % page_size == 0 else (total // page_size) + 1
-    return ContactDtoWithPagination(
-        total_page=total_page,
-        total=total,
-        page_size=page_size,
-        page=page,
-        data=contacts[(page - 1) * page_size:page * page_size]
-    )
 
 
 class ContactsService:
@@ -43,13 +31,23 @@ class ContactsService:
 
         contact_body = json.loads(json.dumps(contact_body, default=str))
 
-        # Check if there are repeating identity pid, if true, then the len of identity_pid will be different
-        # to the len of contact_body
-        identity_pid = set()
+        # Check if there are repeating identity pid, email or phone number, if true, then the len of identity_pid
+        # will be different to the len of contact_body
+        check_repeating = set()
         for c in contact_body:
-            identity_pid.add(c['identity']['pid'])
-        if len(identity_pid) != len(contact_body):
+            check_repeating.add(c['identity']['pid'])
+        if len(check_repeating) != len(contact_body):
             raise RepeatingIdentityPid
+        check_repeating = set()
+        for c in contact_body:
+            check_repeating.add(c['address']['email'])
+        if len(check_repeating) != len(contact_body):
+            raise RepeatingEmail
+        check_repeating = set()
+        for c in contact_body:
+            check_repeating.add(c['address']['telephone'])
+        if len(check_repeating) != len(contact_body):
+            raise RepeatingPhoneNumber
 
         contacts: List[Contacts] = [self.check_save_business_logic(c) for c in contact_body]
         contacts = self.contacts_repository.create_contact(contacts)
@@ -64,21 +62,22 @@ class ContactsService:
             de donne et retournons un message d'erreur au cas ou les donnees sont deja 
             retrouvees dans la bd
         '''
-        if self.contacts_repository.get_contact_by_phone_for_admin(
-                contact_body['address']['telephone']) is not None:
-            raise PhoneNumberExist
-        if self.contacts_repository.get_contact_by_email_for_admin(contact_body['address']['email']) is not None:
-            raise EmailExist
-        if self.contacts_repository.get_contact_by_pid_for_admin(contact_body['identity']['pid']) is not \
-                None:
-            raise IdentityPidExist
+        find_duplicate = self.contacts_repository.get_contact_by_phone_for_admin(
+                contact_body['address']['telephone'])
+        if find_duplicate is not None:
+            raise PhoneNumberExist(find_duplicate.infos['address']['telephone'])
+        find_duplicate = self.contacts_repository.get_contact_by_email_for_admin(contact_body['address']['email'])
+        if find_duplicate is not None:
+            raise EmailExist(find_duplicate.infos['address']['email'])
+        find_duplicate = self.contacts_repository.get_contact_by_pid_for_admin(contact_body['identity']['pid'])
+        if find_duplicate is not None:
+            raise IdentityPidExist(find_duplicate.infos['identity']['pid'])
         return Contacts(
             infos=contact_body,
-            contact_uid=GuidGenerator.contactUID(contact_body['identity']['pid']),
-            created_at=date.today()
+            customer_number=GuidGenerator.contactUID(contact_body['identity']['pid']),
         )
 
-    def update_contact(self, pid: str, contact_body: ContactsInputDto) -> ContactOutputDto:
+    def update_contact(self, number: str, contact_body: ContactsInputDto) -> ContactOutputDto:
         # Convertissons notre object en json
         contact_body.infos = json.loads(contact_body.infos.json())
         '''
@@ -86,48 +85,67 @@ class ContactsService:
             pour ce fait nous verifions l'existance de l'utilisateur dans la bd, au cas ou il n'existe pas 
             on retourne une erreur 403
         '''
-        contact: Contacts = self.contacts_repository.get_contact_by_pid_for_admin(pid)
+        contact: Contacts = self.contacts_repository.get_contact_by_number(number)
+        if contact is None:
+            raise ContactNotFound
+
         checkIdentity: Contacts = self.contacts_repository.get_contact_by_pid_for_admin(
             contact_body.infos['identity']['pid'])
-        if contact is None:
-            raise IdentityPidNotFound
         if checkIdentity is not None:
-            if checkIdentity.infos['identity']['pid'] != pid:
+            if checkIdentity.infos['identity']['pid'] != contact.infos['identity']['pid']:
                 raise IdentityPidExist
+        # check before any modification if the contact is disable or not
+        if contact.deleted_at is not None:
+            raise ContactIsDisable
         # Pendant la modification nous verifions si le numero modifie n'existe pas dans la bd
         contactByPhone: Contacts = self.contacts_repository.get_contact_by_phone_for_admin(
             contact_body.infos['address']['telephone'])
         if contactByPhone is not None:
-            if contactByPhone.contact_uid != contact.contact_uid:
+            if contactByPhone.customer_number != contact.customer_number:
                 raise PhoneNumberExist
 
         # Pendant la modification nous verifions si l'email modifie n'existe pas dans la bd
         contactByEmail: Contacts = self.contacts_repository.get_contact_by_email_for_admin(
             contact_body.infos['address']['email'])
         if contactByEmail is not None:
-            if contactByEmail.contact_uid != contact.contact_uid:
+            if contactByEmail.customer_number != contact.customer_number:
                 raise EmailExist
 
         return self.buildContractOutputDto(self.contacts_repository.update_contact(
             Contacts(
                 infos=contact_body.infos,
-                updated_at=date.today(),
+                updated_at=datetime.now().replace(microsecond=0),
                 created_at=contact.created_at,
                 deleted_at=contact.deleted_at,
                 is_activated=contact.is_activated,
                 id=contact.id,
-                contact_uid=contact.contact_uid,
+                customer_number=contact.customer_number,
             )
         ))
 
-    def delete_contact(self, pid: str) -> None:
-        contact = self.contacts_repository.get_contact_by_pid_for_client(pid)
+    def delete_contact(self, number: str) -> None:
+        contact = self.contacts_repository.get_contact_by_number(number)
         if contact is None:
-            raise IdentityPidNotFound
+            raise ContactNotFound
         contact.is_activated = False
-        contact.deleted_at = date.today()
+        contact.deleted_at = datetime.now().replace(microsecond=0)
         self.contacts_repository.delete_contact(
             contact
+        )
+
+    def buildContactOutputDtoWithPagination(self, contacts: List[ContactOutputDto], offset: int, limit: int,
+                                            type_contact: SearchAllContact):
+        count: int = self.contacts_repository.count_contact(type_contact)
+        total: int = len(contacts)
+        offset: int
+        limit: int
+
+        return ContactDtoWithPagination(
+            count=count,
+            total=total,
+            offset=offset,
+            limit=limit,
+            data=contacts
         )
 
     def get_contact_by_id_for_admin(self, id: int) -> ContactOutputDto:
@@ -153,14 +171,16 @@ class ContactsService:
     def get_contacts_for_admin(self, page: int) -> ContactDtoWithPagination:
         contacts: List[Contacts] = self.contacts_repository.get_contacts_for_admin()
         if len(contacts) != 0:
-            return buildContactOutputDtoWithPagination([self.buildContractOutputDto(c) for c in contacts], page)
+            return self.buildContactOutputDtoWithPagination([self.buildContractOutputDto(c) for c in contacts], page)
         else:
             raise ContactNotFound
 
-    def get_contacts_for_client(self, page: int) -> ContactDtoWithPagination:
-        contacts: List[Contacts] = self.contacts_repository.get_contacts_for_client()
+    def get_contacts_for_client(self, offset: int, limit: int,
+                                type_contact: SearchAllContact) -> ContactDtoWithPagination:
+        contacts: List[Contacts] = self.contacts_repository.get_contacts_for_client(offset, limit, type_contact)
         if len(contacts) != 0:
-            return buildContactOutputDtoWithPagination([self.buildContractOutputDto(c) for c in contacts], page)
+            return self.buildContactOutputDtoWithPagination([self.buildContractOutputDto(c) for c in contacts], offset,
+                                                            limit, type_contact)
         else:
             raise ContactNotFound
 
@@ -224,7 +244,7 @@ class ContactsService:
     def get_contact_by_id_for_client(self, id: int) -> ContactOutputDto:
         c = self.contacts_repository.get_contact_by_id_for_client(id)
         if c is None:
-            raise ContactNotFound
+            raise ContactNotFound("with the id " + str(id))
         return self.buildContractOutputDto(c)
 
     def get_contact_by_type_for_admin(self, contact_type: str, offset: int, limit: int) -> List[ContactOutputDto]:
@@ -244,8 +264,17 @@ class ContactsService:
             id=contact.id,
             infos=contact.infos,
             is_activated=contact.is_activated,
-            contact_uid=contact.contact_uid,
+            customer_number=contact.customer_number,
             created_at=contact.created_at,
             updated_at=contact.updated_at,
             deleted_at=contact.deleted_at
         )
+
+    def search_contact_by_param(self, query_params: SearchByParams) -> ContactOutputDto:
+        if (query_params.phone is None and query_params.email is None and query_params.pid
+                is None and query_params.customer_number is None):
+            raise SearchParamError
+        contact = self.contacts_repository.search_contact_by_param(query_params)
+        if contact is None:
+            raise ContactNotFound
+        return self.buildContractOutputDto(contact)

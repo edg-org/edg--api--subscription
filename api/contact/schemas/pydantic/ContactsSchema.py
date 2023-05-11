@@ -3,7 +3,9 @@ import logging
 from datetime import datetime, date
 from typing import List
 
-from pydantic import BaseModel, validator, EmailStr, constr
+from pydantic import BaseModel, validator, EmailStr, constr, Field
+
+from api.constant import OpenAPIFieldDescription
 
 
 class Identity(BaseModel):
@@ -33,7 +35,7 @@ class Address(BaseModel):
 
 class ContactInfos(BaseModel):
     type: str
-    name: str
+    lastname: str
     firstname: str
     birthday: date
     job: str
@@ -65,7 +67,7 @@ class IdentityOutput(BaseModel):
 
 class ContactInfosOutput(BaseModel):
     type: str
-    name: str
+    lastname: str
     firstname: str
     birthday: date
     job: str
@@ -96,15 +98,28 @@ class ContactOutputDto(BaseModel):
     id: int | None
     infos: ContactInfosOutput | None
     is_activated: bool | None
-    contact_uid: str | None
-    created_at: date | None
-    updated_at: date | None
-    deleted_at: date | None
+    customer_number: str | None
+    created_at: datetime | None
+    updated_at: datetime | None
+    deleted_at: datetime | None
 
 
 class ContactDtoWithPagination(BaseModel):
+    count: int
     total: int
-    page_size: int
-    total_page: int
-    page: int
-    data: List[ContactOutputDto]
+    offset: int
+    limit: int
+    data: List[ContactOutputDto] | None
+
+
+class SearchByParams(BaseModel):
+    pid: str | None = Field(description=OpenAPIFieldDescription.PID)
+    phone: str | None = Field(description=OpenAPIFieldDescription.PHONE)
+    email: str | None = Field(description=OpenAPIFieldDescription.EMAIL)
+    customer_number: str | None = Field(description=OpenAPIFieldDescription.CUSTOMER_NUMBER)
+    status: bool | None = Field(description=OpenAPIFieldDescription.PID)
+
+
+class SearchAllContact(BaseModel):
+    type: str | None = Field(description=OpenAPIFieldDescription.CONTACT_TYPE)
+    status: bool | None = Field(description=OpenAPIFieldDescription.PID)

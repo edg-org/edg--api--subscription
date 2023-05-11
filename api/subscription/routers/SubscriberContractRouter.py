@@ -9,8 +9,7 @@ from api.subscription.services.SubscriberContractService import SubscriberContac
 from api.subscription.utilis.JWTBearer import JWTBearer
 
 SubscriberContractAPIRouter: APIRouter = APIRouter(
-    prefix="/v1/subscriptions",
-    tags=["contract"],
+    prefix="/v1/subscriptions", tags=["subscription"],
     # dependencies=[Depends(JWTBearer())]
 )
 
@@ -46,20 +45,6 @@ def update_contract(
     return contract_service.update_contract(number, contract_schema)
 
 
-@SubscriberContractAPIRouter.put(
-    path="/{number}/activate",
-    response_model=ContractDto,
-    status_code=status.HTTP_200_OK,
-    summary="This endpoint update a contract for contact",
-    description="Using this endpoint, you will update the assigned contract for a specific contact",
-)
-def update_contract_status(
-        number: str,
-        contract_service: SubscriberContactService = Depends()
-):
-    return contract_service.activate_contract(number)
-
-
 @SubscriberContractAPIRouter.delete(
     path="/{number}",
     response_model=ContractDto,
@@ -84,28 +69,16 @@ def delete_contract(
 
 )
 async def get_contract_by_submitted_params(
-        page: int = 1,
+        offset: int = 0,
+        limit: int = 10,
         params: ContractDtoIncoming = Depends(),
         contract_service: SubscriberContactService = Depends()
 ):
     return contract_service.get_contract_by_submitted_params(
         params,
-        page
+        offset,
+        limit
     )
-
-
-@SubscriberContractAPIRouter.get(
-    path="/{number}",
-    response_model=ContractDto,
-    status_code=status.HTTP_200_OK,
-    summary="This endpoint filter contract by contract unique number",
-    description="This endpoint filter contract by contract unique number",
-)
-async def get_contract_by_contract_uid(
-        number: str,
-        contract_service: SubscriberContactService = Depends()
-):
-    return contract_service.get_contract_by_contract_uid(number)
 
 
 @SubscriberContractAPIRouter.get(
@@ -120,4 +93,3 @@ async def get_contract_by_contract_uid_for_client(
         contract_service: SubscriberContactService = Depends()
 ):
     return contract_service.get_billing(number)
-

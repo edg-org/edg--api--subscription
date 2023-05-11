@@ -34,10 +34,10 @@ class ContractLevelError(HTTPException):
 
 
 class ContractExist(HTTPException):
-    def __init__(self):
+    def __init__(self, delivery: str = ""):
         super().__init__(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="The contract already exist at the providing delivery point"
+            detail="The contract already exist at the providing delivery point " + delivery
         )
 
 
@@ -50,10 +50,10 @@ class DeleteContractException(HTTPException):
 
 
 class ContactNotFound(HTTPException):
-    def __init__(self):
+    def __init__(self, contact: str = ""):
         super().__init__(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="We can't found the contact, with the providing data"
+            detail="We can't found the contact, with the providing data " + contact
         )
 
 
