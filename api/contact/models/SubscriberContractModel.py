@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, datetime
 from typing import List
 
 from sqlalchemy import JSON, ForeignKey, String
@@ -18,13 +18,13 @@ class SubscriberContract(EntityMeta):
         "Contacts", back_populates="subscriber_contract"
     )
 
-    opening_date: Mapped[date] = mapped_column(nullable=True, default=None)
-    closing_date: Mapped[date] = mapped_column(nullable=True, default=None)
-    created_at: Mapped[date] = mapped_column(default=date.today())
-    updated_at: Mapped[date] = mapped_column(nullable=True, default=None)
-    deleted_at: Mapped[date] = mapped_column(nullable=True, default=None)
+    opening_date: Mapped[datetime] = mapped_column(nullable=True, default=None)
+    closing_date: Mapped[datetime] = mapped_column(nullable=True, default=None)
+    created_at: Mapped[datetime] = mapped_column(default=datetime.now())
+    updated_at: Mapped[datetime] = mapped_column(nullable=True, default=None)
+    deleted_at: Mapped[datetime] = mapped_column(nullable=True, default=None)
     is_activated: Mapped[bool] = mapped_column(default=False)
-    contract_uid: Mapped[str] = mapped_column(String(10))
+    contract_number: Mapped[str] = mapped_column(String(10))
     attachment: Mapped[dict] = mapped_column(JSON, default=None, nullable=True)
 
     def normalize(self):

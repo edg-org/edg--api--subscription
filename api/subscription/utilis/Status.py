@@ -1,7 +1,6 @@
 
 class ContractStatus:
-    INITIAL = "Initial"
-    EDITED = "Avenant"
+    ACTIVE = "Activé"
     PENDED = "Suspendu"
     CLOSED = "Clôturé"
     CREATED = "Créé"

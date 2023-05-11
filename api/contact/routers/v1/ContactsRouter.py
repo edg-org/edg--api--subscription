@@ -1,12 +1,15 @@
 from typing import List
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, status
 
-from api.contact.schemas.pydantic.ContactsSchema import ContactOutputDto, ContactsInputDto, ContactDtoWithPagination
+from api.contact.schemas.pydantic.ContactsSchema import ContactOutputDto, ContactsInputDto, ContactDtoWithPagination, \
+    SearchByParams, SearchAllContact
 from api.contact.services.ContactsService import ContactsService
+from api.subscription.schemas.SubscriberContractSchema import ContractDto
+from api.subscription.services.SubscriberContractService import SubscriberContactService
 
 ContactsRouter = APIRouter(
-    prefix="/v1/customers", tags=["contacts"]
+    prefix="/v1/customers", tags=["customer"]
 )
 
 
@@ -24,116 +27,69 @@ def create_contact(
 
 
 @ContactsRouter.put(
-    "/{pid}",
+    "/{number}",
     response_model=ContactOutputDto,
-    summary="update user by pid",
+    summary="update user by customer number",
     description="use this endpoint to update user infos"
 )
 def update_contact(
-        pid: str,
+        number: str,
         contact: ContactsInputDto,
         contact_service: ContactsService = Depends()
 ):
-    return contact_service.update_contact(pid, contact)
+    return contact_service.update_contact(number, contact)
 
 
 @ContactsRouter.delete(
-    "/{pid}",
-    summary="delete user by pid",
+    "/{number}",
+    summary="delete user by customer number",
     description="This will display info only for active account"
 )
 def delete_contact(
-        pid: str,
+        number: str,
         contact_service: ContactsService = Depends()
 ):
-    contact_service.delete_contact(pid)
+    contact_service.delete_contact(number)
 
 
 @ContactsRouter.get(
-    "/phone",
+    "/search",
     response_model=ContactOutputDto,
-    summary="search user by phone only for active account",
-    description="This will display info only for active account"
+    summary="Search customer by params",
+    description=" This endpoint is use to search customer by given params (pid passport number or ID number"
+                ", email, customer number and phone number, at least one param should be applied) return specific user"
 )
-def get_contact_by_phone_for_client(
-        phone: str,
-        contact_service: ContactsService = Depends()):
-    return contact_service.get_contact_by_phone_for_client(phone)
-
-
-@ContactsRouter.get(
-    "/email",
-    response_model=ContactOutputDto,
-    summary="search user by email only for active account",
-    description="This will display info only for active account"
-)
-def get_contact_by_email_for_client(
-        email: str,
-        contact_service: ContactsService = Depends()):
-    return contact_service.get_contact_by_email_for_client(email)
+async def search_contact_by_params(
+        query_params: SearchByParams = Depends(),
+        contact_service: ContactsService = Depends()
+):
+    return contact_service.search_contact_by_param(query_params)
 
 
 @ContactsRouter.get(
     "",
     response_model=ContactDtoWithPagination,
-    summary="search users for active account",
-    description="This will display info only for active account"
+    summary="search customer by given params",
+    description="This will display info only for given params (type maybe client, abonne or prospect) return collection"
 )
 def get_contacts_for_client(
-        page: int,
+        offset: int = 0,
+        limit: int = 10,
+        type_contact: SearchAllContact = Depends(),
         contact_service: ContactsService = Depends()
 ):
-    return contact_service.get_contacts_for_client(page)
+    return contact_service.get_contacts_for_client(offset, limit, type_contact)
 
 
 @ContactsRouter.get(
-    "/pid",
-    response_model=ContactOutputDto,
-    summary="search user by pid only for active account",
-    description="This will display info only for active account"
+    path="/{number}/subscriptions",
+    response_model=List[ContractDto],
+    status_code=status.HTTP_200_OK,
+    summary="This endpoint filter contract by contract unique number",
+    description="This endpoint filter contract by contract unique number",
 )
-def get_contact_by_pid_for_client(
-        pid: str,
-        contact_service: ContactsService = Depends()
-):
-    return contact_service.get_contact_by_pid_for_client(pid)
-
-
-@ContactsRouter.get(
-    "/number",
-    response_model=ContactOutputDto,
-    summary="search user by contact unique number(uid) including delete or active",
-    description="search user by contact unique number(uid) including delete or active"
-)
-def get_contact_by_uid_for_client(
+async def get_billing(
         number: str,
-        contact_service: ContactsService = Depends()
+        contract_service: SubscriberContactService = Depends()
 ):
-    return contact_service.get_contact_by_uid_for_client(number)
-
-
-@ContactsRouter.get(
-    "/id",
-    response_model=ContactOutputDto | None,
-    summary="search user by his id in db only for active account",
-    description="search user by his id in db only for active account"
-)
-def get_contact_by_id_for_client(
-        id: int,
-        contact_service: ContactsService = Depends()
-):
-    return contact_service.get_contact_by_id_for_client(id)
-
-
-@ContactsRouter.get(
-    "/type",
-    response_model=List[ContactOutputDto],
-    summary="search user by contact type only for active account",
-    description="search user by contact type only for active account"
-)
-def get_contact_by_type_for_client(
-        contact_type: str,
-        offset: int, limit: int,
-        contact_service: ContactsService = Depends()
-):
-    return contact_service.get_contact_by_type_for_client(contact_type, offset, limit)
+    return contract_service.get_contracts_by_contact_number(number)

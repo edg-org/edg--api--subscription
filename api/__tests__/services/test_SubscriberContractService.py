@@ -37,7 +37,7 @@ class SubscriberContractService(TestCase):
             self.contacts_repository
         )
         self.contract_service.check_save_business_logic = Mock(return_value=None)
-        self.contract_repository.get_contract_by_delivery_point = Mock(return_value=None)
+        self.contract_repository.get_contract_by_delivery_point_on_number = Mock(return_value=None)
 
     @patch("api.subscription.schemas.SubscriberContractSchema.SubscriberContractSchema", autospec=True)
     def test_create_contract(self, SubscriberContractSchema):
@@ -84,7 +84,7 @@ class SubscriberContractService(TestCase):
             }
         )
 
-        self.contract_repository.get_contract_by_delivery_point = Mock(return_value=None)
+        self.contract_repository.get_contract_by_delivery_point_on_number = Mock(return_value=None)
         self.contract_service.update_contract = Mock(return_value=None)
         self.contract_service.update_contract("dsfdg", contract_schema)
         self.contract_service.update_contract.assert_called_once()

@@ -1,7 +1,7 @@
 from typing import List, Optional
 
 from fastapi import Depends
-from sqlalchemy import select
+from sqlalchemy import select, func
 from sqlalchemy.orm import Session
 
 from api.configs.Database import get_db_connection
@@ -64,7 +64,7 @@ class SubscriberContractRepository:
         """
         return self.db.scalars(select(SubscriberContract).where(
             SubscriberContract.customer_id == costumer_id,
-            SubscriberContract.is_activated == True
+            SubscriberContract.deleted_at is not None
         ).offset(offset).limit(limit)).all()
 
     def get_contract_by_customer_id_for_admin(self, customer_id: int, offset: int, limit: int) \
@@ -89,8 +89,19 @@ class SubscriberContractRepository:
         :return:SubscriberContract
         """
         return self.db.scalars(select(SubscriberContract).where(
-            SubscriberContract.contract_uid.ilike(contract_uid),
-            SubscriberContract.is_activated == True
+            SubscriberContract.contract_number.ilike(contract_uid),
+            SubscriberContract.deleted_at is not None
+        )).first()
+
+    def get_contract_by_contract_uid_for_update(self, contract_uid: str) -> SubscriberContract:
+        """
+        This function fetch the contract information corresponding to given contract_uid
+        (unique contract ID for the contract) where is_activated is equal to True
+        :param contract_uid: unique contract number
+        :return:SubscriberContract
+        """
+        return self.db.scalars(select(SubscriberContract).where(
+            SubscriberContract.contract_number.ilike(contract_uid)
         )).first()
 
     def get_contract_by_contract_uid_for_admin(self, contract_uid: str) -> SubscriberContract:
@@ -101,7 +112,7 @@ class SubscriberContractRepository:
         :return:SubscriberContract
         """
         return self.db.scalars(select(SubscriberContract).where(
-            SubscriberContract.contract_uid.ilike(contract_uid.lower())
+            SubscriberContract.contract_number.ilike(contract_uid.lower())
         )).first()
 
     def get_contract_by_contact_uid_and_contract_uid_for_client(self, contract_uid: str, contact_uid: str) \
@@ -113,8 +124,8 @@ class SubscriberContractRepository:
         :return: SubscriberContract
         """
         return self.db.scalars(select(SubscriberContract).join(Contacts).where(
-            SubscriberContract.contract_uid.ilike(contract_uid),
-            Contacts.contact_uid.ilike(contact_uid),
+            SubscriberContract.contract_number.ilike(contract_uid),
+            Contacts.customer_number.ilike(contact_uid),
             SubscriberContract.is_activated == True
         )).first()
 
@@ -127,8 +138,8 @@ class SubscriberContractRepository:
         :return: SubscriberContract
         """
         return self.db.scalars(select(SubscriberContract).join(Contacts).where(
-            SubscriberContract.contract_uid.ilike(contract_uid),
-            Contacts.contact_uid.ilike(contact_uid)
+            SubscriberContract.contract_number.ilike(contract_uid),
+            Contacts.customer_number.ilike(contact_uid)
         )).first()
 
     def get_contract_by_contact_pid_and_contract_uid_for_client(self, contract_uid: str,
@@ -141,7 +152,7 @@ class SubscriberContractRepository:
         :return: SubscriberContract
         """
         return self.db.scalars(select(SubscriberContract).join(Contacts).where(
-            SubscriberContract.contract_uid.ilike(contract_uid),
+            SubscriberContract.contract_number.ilike(contract_uid),
             Contacts.infos['identity']['pid'] == contact_pid,
             SubscriberContract.is_activated == True
         )).first()
@@ -156,8 +167,8 @@ class SubscriberContractRepository:
         :return: SubscriberContract
         """
         return self.db.scalars(select(SubscriberContract).join(Contacts).where(
-            SubscriberContract.contract_uid.ilike(contract_uid),
-            Contacts.contact_uid.ilike(contact_pid)
+            SubscriberContract.contract_number.ilike(contract_uid),
+            Contacts.customer_number.ilike(contact_pid)
         )).first()
 
     def get_contract_by_status_for_client(self, status: str, offset: int, limit: int) -> List[SubscriberContract]:
@@ -207,12 +218,12 @@ class SubscriberContractRepository:
         :return: return an optional of SubscriberContract
         """
         return self.db.scalars(select(SubscriberContract).where(
-            SubscriberContract.contract_uid == contact_uid,
+            SubscriberContract.contract_number == contact_uid,
             SubscriberContract.is_activated == True,
             SubscriberContract.infos['delivery_point'] == delivery_point
         )).first()
 
-    def get_contract_by_delivery_point(self, delivery_point: str) -> SubscriberContract:
+    def get_contract_by_delivery_point_on_number(self, delivery_point: str) -> SubscriberContract:
         """
         This function filter an activated contract by the delivery point
         :param delivery_point:
@@ -220,26 +231,65 @@ class SubscriberContractRepository:
         """
         return self.db.scalars(select(SubscriberContract).where(
             SubscriberContract.infos['delivery_point']['number'] == delivery_point,
-            SubscriberContract.is_activated ==True
+            SubscriberContract.is_activated == True
         )).first()
 
-    def get_contract_by_submitted_params(self, params: ContractDtoIncoming) -> List[SubscriberContract]:
+    def get_contract_by_delivery_point_on_metric_number(self, metric_number: str) -> SubscriberContract:
+        """
+        This function filter an activated contract by the delivery point
+        :param metric_number:
+        :return: SubscriberContract
+        """
+        return self.db.scalars(select(SubscriberContract).where(
+            SubscriberContract.infos['delivery_point']['metric_number'] == metric_number,
+            SubscriberContract.is_activated == True
+        )).first()
+
+    def count_contract_by_contact_number(self, contact_number: str) -> int:
+        return self.db.execute(select(func.count(SubscriberContract.id)).join(Contacts).where(
+            Contacts.customer_number.ilike(contact_number),
+            SubscriberContract.deleted_at is not None
+        )).scalar()
+
+    def get_contract_by_submitted_params(self, params: ContractDtoIncoming, offset: int, limit: int) -> List[
+        SubscriberContract]:
+        """
+        This function fileter a contract by submitted params
+        :param params:
+        :param offset
+        :param limit:
+        :return:
+        """
+        return self.db.scalars(
+            select(SubscriberContract).filter(
+                SubscriberContract.contract_number == params.contract_number
+                if params.contract_number is not None else True,
+                SubscriberContract.infos['status'] == params.status.value.lower().capitalize()
+                if params.status is not None else True
+            ).join(Contacts).where(
+                Contacts.customer_number == params.customer_number
+                if params.customer_number is not None else True
+            ).offset(offset).limit(limit)
+        ).all()
+
+    def count_contract(self, params: ContractDtoIncoming) -> int:
         """
         This function fileter a contract by submitted params
         :param params:
         :return:
         """
-        return self.db.scalars(
-            select(SubscriberContract).filter(
-                SubscriberContract.contract_uid == params.contract_number
+        return self.db.execute(
+            select(func.count(SubscriberContract.id)).filter(
+                SubscriberContract.contract_number == params.contract_number
                 if params.contract_number is not None else True,
+                Contacts.customer_number == params.customer_number
+                if params.customer_number is not None else True,
                 SubscriberContract.is_activated == True
             ).join(Contacts).where(
-                Contacts.contact_uid == params.customer_number
+                Contacts.customer_number == params.customer_number
                 if params.customer_number is not None else True
             )
-            .order_by(SubscriberContract.id)
-        ).all()
+        ).scalar()
 
     def get_contracts(self) -> List[SubscriberContract]:
         return self.db.scalars(select(SubscriberContract).where(SubscriberContract.is_activated == True)
@@ -247,6 +297,6 @@ class SubscriberContractRepository:
 
     def get_contract_by_contact_number(self, contact_number: str) -> List[SubscriberContract]:
         return self.db.scalars(select(SubscriberContract).join(Contacts).where(
-            Contacts.contact_uid.ilike(contact_number),
-            SubscriberContract.is_activated == True
-        ).order_by(SubscriberContract.id)).all();
+            Contacts.customer_number.ilike(contact_number),
+            SubscriberContract.deleted_at is not None
+        )).all();
