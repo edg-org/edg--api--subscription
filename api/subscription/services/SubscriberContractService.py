@@ -87,30 +87,8 @@ class SubscriberContactService:
             raise RepeatingDeliveryPoint
 
         contracts: List[SubscriberContract] = [self.check_save_business_logic(c) for c in contract_schema]
-        self.contractUID(self.contact_service.get_contact_by_id_for_client(23),contract_schema)
-        # contracts = self.subscriber_contract_repository.create_contract(contracts)
+        contracts = self.subscriber_contract_repository.create_contract(contracts)
         return [self.buildContractDto(c) for c in contracts]
-
-    def contractUID(self, contact: ContactOutputDto, contract_schemas: List[SubscriberContractSchema]) \
-            -> str:
-        # get contact from db if exist
-        amount_contract = 0
-        if contact is not None:
-            amount_contract = self.subscriber_contract_repository.count_contract_by_contact_number(
-                contact.customer_number)
-        # check for repeating contract for given customer id in contract_schemas variable
-        # contract_schemas = json.dumps([contract.dict() for contract in contract_schemas])
-        # contract_schemas = json.loads(contract_schemas)
-        customer_count = Counter(item['customer_id'] for item in contract_schemas)
-        customer_repeat = dict()
-        value_to_return = []
-        for i, (customer, count) in enumerate(customer_count.items()):
-            customer_repeat['customer_id'] = customer
-            customer_repeat['count'] = count
-            value_to_return.append(customer_repeat)
-        logging.error("mmm %s", value_to_return)
-        contact = jsonable_encoder(contact)
-        return "C" + str(abs(hash(contact['infos']['identity']['pid'])) % (10 ** 7))
 
     def check_save_business_logic(self, contract_schema: SubscriberContractSchema) -> SubscriberContract:
         """
@@ -145,12 +123,11 @@ class SubscriberContactService:
             raise ContractLevelError
 
         contact = jsonable_encoder(contact)
-        # logging.error("msgaga %s", contact)
 
         return SubscriberContract(
             infos=contract_schema,
             customer_id=contract_schema['customer_id'],
-            # contract_number=GuidGenerator.contractUID(contact['infos']['identity']['pid'], ""),
+            contract_number=GuidGenerator.contractUID(contact['infos']['identity']['pid']),
         )
 
     def update_contract(self, contract_number: str, contract_schema: SubscriberContractSchema) -> ContractDto:
@@ -162,18 +139,23 @@ class SubscriberContactService:
         """
 
         contract_schema = jsonable_encoder(contract_schema)
-        logging.error(contract_schema['status'])
+        # logging.error(contract_schema['status'])
         # Previous status should be different to current status
         if contract_schema['status'] == contract_schema['previous_status']:
             raise ContractStatusError
 
         contract_exist: SubscriberContract = self.subscriber_contract_repository \
             .get_contract_by_contract_uid(contract_number)
+        logging.error("update find %s", contract_exist.normalize())
         # if the contract does not exist, so we throw an exception
         if contract_exist is None:
             raise ContractNotFound
 
-        if contract_exist.deleted_at is not None:
+        # Is the contract activate, if not, we cannot apply any edit operation on it
+        # if contract_exist.opening_date is None:
+        # raise ContractDisabled
+        # If the closing date is set that mean that the contract is resigned
+        if contract_exist.closing_date is not None:
             raise ContractDisabled
 
         # check if the contact exist
@@ -194,16 +176,16 @@ class SubscriberContactService:
                 delivery_point_associate_to_contract.customer_id != contact.id):
             raise EditContactWhileNotOwner
 
-        # Is the contract activate, if not, we cannot apply any edit operation on it
-        # if contract_exist.opening_date is None:
-        #    raise ContractDisabled
-        # If the closing date is set that mean that the contract is resigned
-        if contract_exist.closing_date is not None:
-            raise ContractDisabled
-
+        delivery_point_associate_to_contract: SubscriberContract = self.subscriber_contract_repository. \
+            get_contract_by_delivery_point_on_metric_number(contract_schema['delivery_point']['metric_number'])
+        if (delivery_point_associate_to_contract is not None and
+                delivery_point_associate_to_contract.customer_id != contact.id):
+            raise EditContactWhileNotOwner
         # check status logic
         contract_exist = self.contract_status_logic(contract_exist, contract_schema['status'])
+        logging.error("contract exist %s", contract_exist.normalize())
         # Subscription type and delivery point is immutable
+        # To edit the subscription type you should close the current contract and open an other
         contract_schema['previous_status'] = contract_exist.infos['status']
         contract_schema['subscription_type'] = contract_exist.infos['subscription_type']
         contract_schema['delivery_point'] = contract_exist.infos['delivery_point']
@@ -237,7 +219,7 @@ class SubscriberContactService:
             raise ContractDisabled
         if contract is None:
             raise ContractNotFound
-        if not contract.is_activated:
+        if contract.is_activated:
             contract.opening_date = datetime.now().replace(microsecond=0)
             contract.updated_at = datetime.now().replace(microsecond=0)
             contract.is_activated = True
@@ -266,11 +248,13 @@ class SubscriberContactService:
         ) and status == ContractStatus.CREATED:
             raise StatusErrorWhenCurrentStatusIsEqualEdited
 
-        if contract.infos['status'] == ContractStatus.ACTIVE:
+        if status == ContractStatus.ACTIVE:
+            contract.opening_date = datetime.now().replace(microsecond=0)
             contract.is_activated = True
+
         return contract
 
-    def delete_contract(self, contract_number: str) -> None:
+    def delete_contract(self, contract_number: str) -> ContractDto:
         """
         This service is used to delete the contract by the contract delivery point
         :param contract_number:
@@ -281,12 +265,13 @@ class SubscriberContactService:
         )
         if contract is None:
             raise DeleteContractException
-        else:
-            contract.deleted_at = datetime.now().replace(microsecond=0)
-            contract.is_activated = False
-            contract.closing_date = datetime.now().replace(microsecond=0)
-
-        self.subscriber_contract_repository.delete_contract(contract)
+        contract.deleted_at = datetime.now().replace(microsecond=0)
+        contract.is_activated = False
+        contract.closing_date = datetime.now().replace(microsecond=0)
+        contract.infos = jsonable_encoder(contract.infos)
+        contract.infos['status'] = ContractStatus.CLOSED
+        contract: SubscriberContract = self.subscriber_contract_repository.update_contract(contract)
+        return self.buildContractDto(contract)
 
     def get_contract_by_customer_id_for_client(self, customer_id: int, offset: int, limit: int) \
             -> List[ContractDto]:

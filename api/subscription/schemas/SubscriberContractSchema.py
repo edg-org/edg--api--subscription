@@ -173,7 +173,6 @@ class CustomerStatus(Enum):
 
 
 class ContractDtoIncoming(BaseModel):
-    id: int | None
     customer_number: str | None = Field(description=OpenAPIFieldDescription.CUSTOMER_ID)
     contract_number: str | None = Field(description=OpenAPIFieldDescription.CONTRACT_UID)
     status: CustomerStatus | None = Field(description=OpenAPIFieldDescription.STATUS)

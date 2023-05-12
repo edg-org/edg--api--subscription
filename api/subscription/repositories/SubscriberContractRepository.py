@@ -39,16 +39,18 @@ class SubscriberContractRepository:
         self.db.commit()
         return subscriber_contract
 
-    def delete_contract(self, contract: SubscriberContract) -> None:
+    def delete_contract(self, contract: SubscriberContract) -> SubscriberContract:
         """
         To resign the contract between EDG and customer use this function,
         while resigning the table SubscriberContract will be updated with the flag
         is_activated: False.
-        :param costumer_id: the id of customer to delete
+        :param contract: the id of customer to delete
         :return: None
         """
+
         self.db.merge(contract)
         self.db.commit()
+        return contract
 
     # Filters
 
@@ -90,7 +92,7 @@ class SubscriberContractRepository:
         """
         return self.db.scalars(select(SubscriberContract).where(
             SubscriberContract.contract_number.ilike(contract_uid),
-            SubscriberContract.deleted_at is not None
+            SubscriberContract.deleted_at == None
         )).first()
 
     def get_contract_by_contract_uid_for_update(self, contract_uid: str) -> SubscriberContract:
@@ -231,7 +233,7 @@ class SubscriberContractRepository:
         """
         return self.db.scalars(select(SubscriberContract).where(
             SubscriberContract.infos['delivery_point']['number'] == delivery_point,
-            SubscriberContract.is_activated == True
+            SubscriberContract.deleted_at == None
         )).first()
 
     def get_contract_by_delivery_point_on_metric_number(self, metric_number: str) -> SubscriberContract:
@@ -242,7 +244,7 @@ class SubscriberContractRepository:
         """
         return self.db.scalars(select(SubscriberContract).where(
             SubscriberContract.infos['delivery_point']['metric_number'] == metric_number,
-            SubscriberContract.is_activated == True
+            SubscriberContract.deleted_at == None
         )).first()
 
     def count_contract_by_contact_number(self, contact_number: str) -> int:
@@ -284,7 +286,8 @@ class SubscriberContractRepository:
                 if params.contract_number is not None else True,
                 Contacts.customer_number == params.customer_number
                 if params.customer_number is not None else True,
-                SubscriberContract.is_activated == True
+                SubscriberContract.infos['status'] == params.status.value.lower().capitalize()
+                if params.status is not None else True
             ).join(Contacts).where(
                 Contacts.customer_number == params.customer_number
                 if params.customer_number is not None else True
