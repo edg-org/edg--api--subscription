@@ -3,7 +3,7 @@ from fastapi import HTTPException, status
 from fastapi.openapi.models import Response
 from fastapi.encoders import jsonable_encoder
 
-from api.subscription.exceptions import BillingRequestException
+from api.subscription.exceptions import BillingRequestException, RequestResourceError
 from api.subscription.schemas.SubscriberContractSchema import BillingDto
 
 
@@ -28,21 +28,23 @@ class RequestMaster:
             )
         return response.text
 
-
     @classmethod
     def get_billing_info(cls, subscriber_code: int, url: str, token: str) -> BillingDto:
         header = {
             "Authorization": token
         }
-        response = requests.get(url+"/"+str(subscriber_code))
-        if response.status_code == 200:
-            response = jsonable_encoder(response.text)
-            return BillingDto(
-                subscription_type=response.subscription_type,
-                payment_deadline=response.payment_deadline,
-                deadline_unit_time=response.deadline_unit_time,
-                prime=response.prime,
-                pricing=response.pricing,
-                dunning=response.dunning,
-            )
-        raise BillingRequestException
+        try:
+            response = requests.get(url + "/" + str(subscriber_code))
+            if response.status_code == 200:
+                response = jsonable_encoder(response.text)
+                return BillingDto(
+                    subscription_type=response.subscription_type,
+                    payment_deadline=response.payment_deadline,
+                    deadline_unit_time=response.deadline_unit_time,
+                    prime=response.prime,
+                    pricing=response.pricing,
+                    dunning=response.dunning,
+                )
+            raise BillingRequestException
+        except:
+            raise RequestResourceError

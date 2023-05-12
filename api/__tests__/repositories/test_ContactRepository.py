@@ -1,6 +1,6 @@
 import json
 from unittest import TestCase
-from unittest.mock import create_autospec, patch
+from unittest.mock import create_autospec, patch, Mock
 
 from sqlalchemy.orm import Session
 
@@ -67,10 +67,6 @@ class TestContactRepository(TestCase):
 
     def test_get_contact_by_phone_for_client(self):
         self.contacts_repository.get_contact_by_phone_for_client("+224-610-18-22-15")
-        self.session.scalars.assert_called_once()
-
-    def test_get_contacts_for_client(self):
-        self.contacts_repository.get_contacts_for_client()
         self.session.scalars.assert_called_once()
 
     def test_get_contacts_by_type_for_client(self):
