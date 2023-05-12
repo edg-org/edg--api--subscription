@@ -146,7 +146,7 @@ class SubscriberContactService:
 
         contract_exist: SubscriberContract = self.subscriber_contract_repository \
             .get_contract_by_contract_uid(contract_number)
-        logging.error("update find %s", contract_exist.normalize())
+        # logging.error("update find %s", contract_exist.normalize())
         # if the contract does not exist, so we throw an exception
         if contract_exist is None:
             raise ContractNotFound
