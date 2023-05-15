@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import List, Optional, Sequence
 
 from fastapi import Depends
 from sqlalchemy import select, func
@@ -8,7 +8,7 @@ from api.configs.Database import get_db_connection
 from api.contact.models.ContactsModel import Contacts
 from api.contact.models.SubscriberContractModel import SubscriberContract
 
-from api.subscription.schemas.SubscriberContractSchema import ContractDtoIncoming
+from api.subscription.schemas.SubscriberContractSchema import ContractDtoIncoming, ContractInvoiceParams
 
 
 class SubscriberContractRepository:
@@ -55,7 +55,7 @@ class SubscriberContractRepository:
     # Filters
 
     def get_contract_by_customer_id_for_client(self, costumer_id: int, offset: int, limit: int) -> \
-            List[SubscriberContract]:
+            Sequence[List[SubscriberContract]]:
         """
         This function fetch all contract for the given costume_id and the given pagination where the is_activated is
         equal to True
@@ -70,11 +70,11 @@ class SubscriberContractRepository:
         ).offset(offset).limit(limit)).all()
 
     def get_contract_by_customer_id_for_admin(self, customer_id: int, offset: int, limit: int) \
-            -> List[SubscriberContract]:
+            -> Sequence[List[SubscriberContract]]:
         """
          This function fetch all contract for the given costume_id and the given pagination where the is_activated is
          equal to True or False
-        :param costume_id: customer id from db
+        :param customer_id  from db
         :param offset: start pagination
         :param limit: end pagination
         :return: List of SubscriberContract
@@ -91,7 +91,7 @@ class SubscriberContractRepository:
         :return:SubscriberContract
         """
         return self.db.scalars(select(SubscriberContract).where(
-            SubscriberContract.contract_number.ilike(contract_uid),
+            SubscriberContract.contract_number == contract_uid,
             SubscriberContract.deleted_at == None
         )).first()
 
@@ -128,7 +128,7 @@ class SubscriberContractRepository:
         return self.db.scalars(select(SubscriberContract).join(Contacts).where(
             SubscriberContract.contract_number.ilike(contract_uid),
             Contacts.customer_number.ilike(contact_uid),
-            SubscriberContract.is_activated == True
+            SubscriberContract.is_activated is True
         )).first()
 
     def get_contract_by_contact_uid_and_contract_uid_for_admin(self, contract_uid: str, contact_uid: str) \
@@ -156,7 +156,7 @@ class SubscriberContractRepository:
         return self.db.scalars(select(SubscriberContract).join(Contacts).where(
             SubscriberContract.contract_number.ilike(contract_uid),
             Contacts.infos['identity']['pid'] == contact_pid,
-            SubscriberContract.is_activated == True
+            SubscriberContract.is_activated is True
         )).first()
 
     def get_contract_by_contact_pid_and_contract_uid_for_admin(self, contract_uid: str,
@@ -173,7 +173,8 @@ class SubscriberContractRepository:
             Contacts.customer_number.ilike(contact_pid)
         )).first()
 
-    def get_contract_by_status_for_client(self, status: str, offset: int, limit: int) -> List[SubscriberContract]:
+    def get_contract_by_status_for_client(self, status: str, offset: int, limit: int) \
+            -> Sequence[List[SubscriberContract]]:
         """
         This function filter the activated contract by the given status
         :param status: contract's status
@@ -183,10 +184,11 @@ class SubscriberContractRepository:
         """
         return self.db.scalars(select(SubscriberContract).where(
             SubscriberContract.infos['status'] == status,
-            SubscriberContract.is_activated == True
+            SubscriberContract.is_activated is True
         ).offset(offset).limit(limit)).all()
 
-    def get_contract_by_status_for_admin(self, status: str, offset: int, limit: int) -> List[SubscriberContract]:
+    def get_contract_by_status_for_admin(self, status: str, offset: int, limit: int) -> \
+            Sequence[List[SubscriberContract]]:
         """
         This function filter activated or resigned contract by the given status
         :param status:  contract's status
@@ -198,8 +200,8 @@ class SubscriberContractRepository:
             SubscriberContract.infos['status'] == status
         ).offset(offset).limit(limit)).all()
 
-    def get_deleted_contract_by_status_for_admin(self, status: str, offset: int, limit: int) -> List[
-        SubscriberContract]:
+    def get_deleted_contract_by_status_for_admin(self, status: str, offset: int, limit: int) -> \
+            Sequence[List[SubscriberContract]]:
         """
         This function filter resigned contract by the given status
         :param status:  contract's status
@@ -221,7 +223,7 @@ class SubscriberContractRepository:
         """
         return self.db.scalars(select(SubscriberContract).where(
             SubscriberContract.contract_number == contact_uid,
-            SubscriberContract.is_activated == True,
+            SubscriberContract.is_activated is True,
             SubscriberContract.infos['delivery_point'] == delivery_point
         )).first()
 
@@ -233,7 +235,7 @@ class SubscriberContractRepository:
         """
         return self.db.scalars(select(SubscriberContract).where(
             SubscriberContract.infos['delivery_point']['number'] == delivery_point,
-            SubscriberContract.deleted_at == None
+            SubscriberContract.deleted_at is None
         )).first()
 
     def get_contract_by_delivery_point_on_metric_number(self, metric_number: str) -> SubscriberContract:
@@ -244,7 +246,7 @@ class SubscriberContractRepository:
         """
         return self.db.scalars(select(SubscriberContract).where(
             SubscriberContract.infos['delivery_point']['metric_number'] == metric_number,
-            SubscriberContract.deleted_at == None
+            SubscriberContract.deleted_at is None
         )).first()
 
     def count_contract_by_contact_number(self, contact_number: str) -> int:
@@ -253,8 +255,8 @@ class SubscriberContractRepository:
             SubscriberContract.deleted_at is not None
         )).scalar()
 
-    def get_contract_by_submitted_params(self, params: ContractDtoIncoming, offset: int, limit: int) -> List[
-        SubscriberContract]:
+    def get_contract_by_submitted_params(self, params: ContractDtoIncoming, offset: int, limit: int) ->\
+            Sequence[List[SubscriberContract]]:
         """
         This function fileter a contract by submitted params
         :param params:
@@ -294,12 +296,22 @@ class SubscriberContractRepository:
             )
         ).scalar()
 
-    def get_contracts(self) -> List[SubscriberContract]:
-        return self.db.scalars(select(SubscriberContract).where(SubscriberContract.is_activated == True)
-                               .order_by(SubscriberContract.id)).all()
+    def get_contracts(self) -> Sequence[List[SubscriberContract]]:
+        return self.db.scalars(select(SubscriberContract).where(SubscriberContract.is_activated is True)).all()
 
-    def get_contract_by_contact_number(self, contact_number: str) -> List[SubscriberContract]:
+    def get_contract_by_contact_number(self, contact_number: str) -> Sequence[List[SubscriberContract]]:
         return self.db.scalars(select(SubscriberContract).join(Contacts).where(
-            Contacts.customer_number.ilike(contact_number),
+            Contacts.customer_number == contact_number,
             SubscriberContract.deleted_at is not None
-        )).all();
+        )).all()
+
+    def get_contact_contracts(self, number: str, params: ContractInvoiceParams) -> Sequence[List[SubscriberContract]]:
+        return self.db.scalars(
+            select(SubscriberContract)
+            .where(
+                SubscriberContract.contract_number == params.contract_number
+                if params.contract_number is not None else True,
+            ).join(
+                Contacts.customer_number == number
+            )
+        ).all()

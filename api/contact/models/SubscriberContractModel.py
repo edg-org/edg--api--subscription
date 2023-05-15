@@ -13,7 +13,7 @@ class SubscriberContract(EntityMeta):
     id: Mapped[int] = mapped_column(primary_key=True)
     infos: Mapped[JSON] = mapped_column(JSON)
     customer_id: Mapped[int] = mapped_column(ForeignKey('contacts.id'))
-
+    customer_number: Mapped[str] = mapped_column(nullable=False)
     contacts: Mapped[List["Contacts"]] = relationship(
         "Contacts", back_populates="subscriber_contract"
     )

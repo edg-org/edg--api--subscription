@@ -3,7 +3,8 @@ from typing import List
 from fastapi import APIRouter, Depends, status
 
 from api.subscription.schemas.SubscriberContractSchema import ContractDto, \
-    SubscriberContractSchema, ContractDtoIncoming, ContractDtoWithPagination, BillingDto
+    SubscriberContractSchema, ContractDtoIncoming, ContractDtoWithPagination, BillingDto, \
+    SubscriberContractInfoInputUpdate
 
 from api.subscription.services.SubscriberContractService import SubscriberContactService
 from api.subscription.utilis.JWTBearer import JWTBearer
@@ -39,7 +40,7 @@ def create_contrat(
 )
 def update_contract(
         number: str,
-        contract_schema: SubscriberContractSchema,
+        contract_schema: SubscriberContractInfoInputUpdate,
         contract_service: SubscriberContactService = Depends()
 ):
     return contract_service.update_contract(number, contract_schema)
@@ -66,7 +67,6 @@ def delete_contract(
     status_code=status.HTTP_200_OK,
     summary="This endpoint filter contracts by the providing parameters",
     description="This endpoint filter contracts by the providing parameters",
-
 )
 async def get_contract_by_submitted_params(
         offset: int = 0,
@@ -93,3 +93,6 @@ async def get_contract_by_contract_uid_for_client(
         contract_service: SubscriberContactService = Depends()
 ):
     return contract_service.get_billing(number)
+
+
+

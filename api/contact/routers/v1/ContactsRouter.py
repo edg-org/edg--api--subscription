@@ -5,7 +5,8 @@ from fastapi import APIRouter, Depends, status
 from api.contact.schemas.pydantic.ContactsSchema import ContactOutputDto, ContactsInputDto, ContactDtoWithPagination, \
     SearchByParams, SearchAllContact
 from api.contact.services.ContactsService import ContactsService
-from api.subscription.schemas.SubscriberContractSchema import ContractDto
+from api.subscription.schemas.SubscriberContractSchema import ContractDto, InvoiceDetails, ContractInvoiceDetails, \
+    ContractInvoiceParams, ContactContracts
 from api.subscription.services.SubscriberContractService import SubscriberContactService
 
 ContactsRouter = APIRouter(
@@ -93,3 +94,19 @@ async def get_billing(
         contract_service: SubscriberContactService = Depends()
 ):
     return contract_service.get_contracts_by_contact_number(number)
+
+
+@ContactsRouter.get(
+    "/{number}/details",
+    response_model=List[ContractInvoiceDetails],
+    status_code=status.HTTP_200_OK,
+    summary="This endpoint get contract details",
+    description="This endpoint get contract details"
+)
+async def get_contract_details(
+        number: str,
+        # contact: ContactContracts,
+        params: ContractInvoiceParams = Depends(),
+        contract_service: SubscriberContactService = Depends()
+):
+    return contract_service.get_contract_details(number,params)

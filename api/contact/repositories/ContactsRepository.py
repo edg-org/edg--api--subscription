@@ -84,7 +84,7 @@ class ContactsRepository:
 
     def get_contact_by_uid_for_client(self, contact_uid: str) -> Contacts:
         return self.db.scalars(select(Contacts).where(
-            Contacts.contact_uid.ilike(contact_uid),
+            Contacts.customer_number == contact_uid,
             Contacts.is_activated == True
         )).first()
 
@@ -119,7 +119,6 @@ class ContactsRepository:
             if type_contact.type is not None else True
         )).scalar()
 
-
     def search_contact_by_param(self, query_params: SearchByParams) -> Contacts:
         return self.db.scalars(select(Contacts).filter(
             Contacts.is_activated == query_params.status
@@ -136,5 +135,5 @@ class ContactsRepository:
 
     def get_contact_by_number(self, number: str) -> Contacts:
         return self.db.scalars(
-            select(Contacts).where(Contacts.customer_number.ilike(number))
+            select(Contacts).where(Contacts.customer_number == number)
         ).first()
