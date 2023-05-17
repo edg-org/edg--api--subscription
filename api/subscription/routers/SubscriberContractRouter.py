@@ -1,10 +1,10 @@
 from typing import List
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, status, Query
 
 from api.subscription.schemas.SubscriberContractSchema import ContractDto, \
     SubscriberContractSchema, ContractDtoIncoming, ContractDtoWithPagination, BillingDto, \
-    SubscriberContractInfoInputUpdate
+    SubscriberContractInfoInputUpdate, ContactDtoForBillingService, ContactWithContractAndPricing
 
 from api.subscription.services.SubscriberContractService import SubscriberContactService
 from api.subscription.utilis.JWTBearer import JWTBearer
@@ -92,7 +92,19 @@ async def get_contract_by_contract_uid_for_client(
         number: str,
         contract_service: SubscriberContactService = Depends()
 ):
-    return contract_service.get_billing(number)
+    return contract_service.get_pricing(number)
 
 
-
+# This endpoint will receive a list of contract_number and fetch information about contact and contracts
+@SubscriberContractAPIRouter.get(
+    path="/numbers/",
+    status_code=status.HTTP_200_OK,
+    response_model=ContactWithContractAndPricing,
+    summary="This endpoint return the list of contract and their contact",
+    description="This endpoint return the list of contract and their contact according to the providing contract number"
+)
+async def get_contract_and_contact_by_contract_uid(
+        number: List[str] = Query(None),
+        contract_service: SubscriberContactService = Depends()
+):
+    return contract_service.get_contract_and_contact_by_contract_uid(number)

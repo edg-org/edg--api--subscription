@@ -310,8 +310,10 @@ class SubscriberContractRepository:
             select(SubscriberContract)
             .where(
                 SubscriberContract.contract_number == params.contract_number
-                if params.contract_number is not None else True,
+                if params.contract_number is not None else True
             ).join(
-                Contacts.customer_number == number
-            )
+                Contacts
+            ).where(Contacts.customer_number == number)
         ).all()
+
+

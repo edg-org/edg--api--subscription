@@ -3,6 +3,7 @@ from enum import Enum
 from typing import List
 
 from pydantic import BaseModel, Field
+from pydantic.dataclasses import dataclass
 
 from api.contact.schemas.pydantic.ContactsSchema import ContactOutputDto, ContactInfos, ContactInfosOutput
 from api.subscription.constant import OpenAPIFieldDescription
@@ -227,24 +228,24 @@ class PostPaidTracking(BaseModel):
 
 
 class InvoicePrepaid(BaseModel):
-    last_power_recharged: str = Field(description=OpenAPIFieldDescription.LAST_POWER_RECHARGED)
-    power_recharged: str = Field(description=OpenAPIFieldDescription.POWER_RECHARGED)
-    total_power_recharged: str = Field(description=OpenAPIFieldDescription.TOTAL_POWER_RECHARGED)
+    last_power_recharged: str | None = Field(description=OpenAPIFieldDescription.LAST_POWER_RECHARGED)
+    power_recharged: str | None = Field(description=OpenAPIFieldDescription.POWER_RECHARGED)
+    total_power_recharged: str | None = Field(description=OpenAPIFieldDescription.TOTAL_POWER_RECHARGED)
 
 
 class Invoice(InvoicePrepaid):
     invoice_number: str = Field(description=OpenAPIFieldDescription.INVOICE_NUMBER)
     invoice_date: str = Field(description=OpenAPIFieldDescription.INVOICE_DATE)
     parent_invoice_number: str = Field(description=OpenAPIFieldDescription.PARENT_INVOICE_NUMBER)
-    last_index_value: str = Field(description=OpenAPIFieldDescription.LAST_INDEX_VALUE)
-    index_value: str = Field(description=OpenAPIFieldDescription.INDEX_VALUE)
-    total_power_consumed: str = Field(description=OpenAPIFieldDescription.TOTAL_POWER_CONSUMED)
+    last_index_value: str | None = Field(description=OpenAPIFieldDescription.LAST_INDEX_VALUE)
+    index_value: str | None = Field(description=OpenAPIFieldDescription.INDEX_VALUE)
+    total_power_consumed: str | None = Field(description=OpenAPIFieldDescription.TOTAL_POWER_CONSUMED)
     total_amount_ht: str = Field(description=OpenAPIFieldDescription.TOTAL_AMOUNT_HT)
     total_amount_ttc: str = Field(description=OpenAPIFieldDescription.TOTAL_AMOUNT_TTC)
     tva: str = Field(description=OpenAPIFieldDescription.TVA)
     payment_deadline: str = Field(description=OpenAPIFieldDescription.PAYMENT_DEADLINE)
     amount_paid: str = Field(description=OpenAPIFieldDescription.AMOUNT_PAID)
-    remaining_amount: str = Field(description=OpenAPIFieldDescription.REMAINING_AMOUNT)
+    remaining_amount: str | None = Field(description=OpenAPIFieldDescription.REMAINING_AMOUNT)
     previous_status: str = Field(description=OpenAPIFieldDescription.PREVIOUS_STATUS_INVOICE)
     status: str = Field(description=OpenAPIFieldDescription.INVOICE_STATUS)
     type: str = Field(description=OpenAPIFieldDescription.INVOICE_TYPE)
@@ -263,9 +264,24 @@ class ContractDetails(BaseModel):
 
 
 class InvoiceDetails(BaseModel):
+    contract_number: str
     invoice: List[Invoice]
 
 
 class ContractInvoiceParams(BaseModel):
     contract_number: str | None = Field(description=OpenAPIFieldDescription.CONTRACT_UID)
     invoice_date: str | None = Field(description=OpenAPIFieldDescription.INVOICE_DATE)
+
+
+class ContractInvoiceForBillingService(BaseModel):
+    contract_number: List[str] | None = Field(description=OpenAPIFieldDescription.CONTRACT_UID)
+    invoice_date: str | None = Field(description=OpenAPIFieldDescription.INVOICE_DATE)
+
+
+class ContactDtoForBillingService(ContractDto):
+    contact: ContactInfosOutput
+
+
+class ContactWithContractAndPricing(BaseModel):
+    contact_contract: List[ContactDtoForBillingService]
+    subscriber_type_pricing_infos: List[BillingDto]

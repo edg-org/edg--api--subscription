@@ -105,8 +105,7 @@ async def get_billing(
 )
 async def get_contract_details(
         number: str,
-        # contact: ContactContracts,
         params: ContractInvoiceParams = Depends(),
         contract_service: SubscriberContactService = Depends()
 ):
-    return contract_service.get_contract_details(number,params)
+    return contract_service.get_contract_details(number, params)

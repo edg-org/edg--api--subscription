@@ -1,7 +1,7 @@
 import json
 import logging
 from datetime import datetime
-from typing import List, Sequence
+from typing import List, Sequence, cast
 
 from fastapi import Depends
 from fastapi.encoders import jsonable_encoder
@@ -19,7 +19,8 @@ from api.subscription.repositories.SubscriberContractRepository import Subscribe
 from api.subscription.schemas.SubscriberContractSchema import SubscriberContractSchema, ContractDtoIncoming, \
     ContractDto, ContractDtoWithPagination, BillingDto, SubscriberContractInfoInputUpdate, ContractDetails, \
     InvoiceDetails, ContractInvoiceDetails, ContactContracts, ContractInvoiceParams, Invoice, \
-    SubscriberContractInfoOutput
+    SubscriberContractInfoOutput, ContractInvoiceForBillingService, ContactDtoForBillingService, \
+    ContactWithContractAndPricing
 from api.subscription.services.GuidGenerator import GuidGenerator
 from api.subscription.services.RequestMaster import RequestMaster
 from api.subscription.utilis.Status import ContractStatus
@@ -286,7 +287,7 @@ class SubscriberContactService:
         """
         # logging.warning("excluded id", params.dict(exclude_none=True).)
 
-        contracts: List[SubscriberContract] = self.subscriber_contract_repository. \
+        contracts: Sequence[List[SubscriberContract]] = self.subscriber_contract_repository. \
             get_contract_by_submitted_params(params, offset, limit)
         contracts: List[ContractDto] = [self.buildContractDto(c) for c in contracts]
         if len(contracts) == 0:
@@ -322,7 +323,7 @@ class SubscriberContactService:
             raise ContractNotFound
         return [self.buildContractDto(c) for c in contracts]
 
-    def get_billing(self, number) -> BillingDto | None:
+    def get_pricing(self, number) -> BillingDto | None:
         """
         Request referential system to get a billing information
         :param number:
@@ -335,21 +336,89 @@ class SubscriberContactService:
             raise ContractNotFound
         # Do request to the external service and get data
         return RequestMaster. \
-            get_billing_info(1, "http://localhost:8082/pricing", "")
+            get_billing_info([""], "http://localhost:8082/pricing", "")
 
     def get_contract_details(self, number, params: ContractInvoiceParams) -> List[ContractInvoiceDetails]:
-        contracts: Sequence[List[SubscriberContract]] = self.subscriber_contract_repository.\
+        contracts: Sequence[List[SubscriberContract]] = self.subscriber_contract_repository. \
             get_contact_contracts(number, params)
         if contracts is None:
             raise ContractNotFound
+        # build contract dto
+        contracts: List[ContractDto] = [self.buildContractDto(c) for c in contracts]
+
         # get invoice from billing microservice
-        invoice: InvoiceDetails = RequestMaster.\
-            get_invoice(params.contract_number, "http://localhost:8082/billing/invoice", "token")
+        if params.contract_number is not None:
+            invoice: List[InvoiceDetails] = RequestMaster. \
+                get_invoice(ContractInvoiceForBillingService(
+                invoice_date=params.invoice_date,
+                contract_number=[params.contract_number]),
+                "http://localhost:8082/billing/invoice",
+                "token")
 
-        return [self.buildContractInvoiceDetails(c) for c in invoice.invoice]
+        else:
+            invoice: List[InvoiceDetails] = RequestMaster.get_invoice(
+                ContractInvoiceForBillingService(
+                    invoice_date=params.invoice_date,
+                    contract_number=[c.contract_number for c in contracts]
+                ),
+                "http://localhost:8082/billing/invoice",
+                "")
 
-    def buildContractInvoiceDetails(self, invoice: List[Invoice], contract: SubscriberContractInfoOutput) \
-        -> ContractInvoiceDetails:
+        return [self.buildContractInvoiceDetails(i.invoice, c) for i in invoice for c in contracts]
+
+    def buildContractInvoiceDetails(self, invoice: List[Invoice], contract: ContractDto) \
+            -> ContractInvoiceDetails:
         return ContractInvoiceDetails(
+            consumption_estimated=contract.infos.consumption_estimated,
+            subscription_type=contract.infos.subscription_type,
+            payment_deadline=contract.infos.payment_deadline,
+            deadline_unit_time=contract.infos.deadline_unit_time,
+            subscribed_power=contract.infos.subscribed_power,
+            power_of_energy=contract.infos.power_of_energy,
+            status=contract.infos.status,
+            previous_status=contract.infos.previous_status,
+            level=contract.infos.level,
+            previous_level=contract.infos.previous_level,
+            invoicing_frequency=contract.infos.invoicing_frequency,
+            delivery_point=contract.infos.delivery_point,
+            agency=contract.infos.agency,
+            home_infos=contract.infos.home_infos,
+            is_bocked_payment=contract.infos.is_bocked_payment,
+            pricing=contract.infos.pricing,
+            dunning=contract.infos.dunning,
+            tracking_type=contract.infos.tracking_type,
+            invoice=invoice
+        )
 
+    def get_contract_and_contact_by_contract_uid(self, number: List[str]) -> ContactWithContractAndPricing:
+        contracts: List[SubscriberContract] = []
+        subscriber_type: List[str] = []
+        for contract_number in number:
+            contract = self.subscriber_contract_repository.get_contract_by_contract_uid(contract_number)
+            if contract is not None:
+                if contract.infos['subscription_type']['name'] not in subscriber_type:
+                    subscriber_type.append(contract.infos['subscription_type']['name'])
+                contracts.append(contract)
+        try:
+            pricing: List[BillingDto] = RequestMaster.get_billing_info(subscriber_type, "http://localhost:8082/pricing", "")
+        except:
+            pricing = [BillingDto()]
+        # logging.error(f"aaaa %s ", contracts[0].contacts.infos)
+        contracts: List[ContactDtoForBillingService] = [ContactDtoForBillingService(
+            contact=c.contacts.infos,
+            id=c.id,
+            infos=c.infos,
+            opening_date=c.opening_date,
+            closing_date=c.closing_date,
+            created_at=c.created_at,
+            updated_at=c.updated_at,
+            deleted_at=c.deleted_at,
+            is_activated=c.is_activated,
+            contract_number=c.contract_number,
+            customer_number=c.customer_number
+        ) for c in contracts]
+
+        return ContactWithContractAndPricing(
+            contact_contract=contracts,
+            subscriber_type_pricing_infos=pricing
         )

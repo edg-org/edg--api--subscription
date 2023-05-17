@@ -6,7 +6,8 @@ from fastapi.openapi.models import Response
 from fastapi.encoders import jsonable_encoder
 
 from api.subscription.exceptions import BillingRequestException, RequestResourceError
-from api.subscription.schemas.SubscriberContractSchema import BillingDto, InvoiceDetails, Invoice
+from api.subscription.schemas.SubscriberContractSchema import BillingDto, InvoiceDetails, Invoice, \
+    ContractInvoiceForBillingService
 
 
 class RequestMaster:
@@ -31,35 +32,38 @@ class RequestMaster:
         return response.text
 
     @classmethod
-    def get_billing_info(cls, subscriber_code: int, url: str, token: str) -> BillingDto:
+    def get_billing_info(cls, subscriber_code: List[str], url: str, token: str) -> List[BillingDto]:
         header = {
             "Authorization": token
         }
         try:
-            response = requests.get(url + "/" + str(subscriber_code))
+            response = requests.get(url, params=subscriber_code)
             if response.status_code == 200:
-                response = jsonable_encoder(response.text)
-                return BillingDto(
-                    subscription_type=response.subscription_type,
-                    payment_deadline=response.payment_deadline,
-                    deadline_unit_time=response.deadline_unit_time,
-                    prime=response.prime,
-                    pricing=response.pricing,
-                    dunning=response.dunning,
-                )
+                response.text: List[BillingDto] = jsonable_encoder(response.text)
+                return [BillingDto(
+                    subscription_type=billing.subscription_type,
+                    payment_deadline=billing.payment_deadline,
+                    deadline_unit_time=billing.deadline_unit_time,
+                    prime=billing.prime,
+                    pricing=billing.pricing,
+                    dunning=billing.dunning,
+                ) for billing in response.text]
             raise BillingRequestException
         except:
             raise RequestResourceError
 
     @classmethod
-    def get_invoice(cls, contract_number: str, url: str, token: str) -> InvoiceDetails:
+    def get_invoice(cls, contractParam: ContractInvoiceForBillingService, url: str, token: str) -> List[InvoiceDetails]:
         header = {
             "Authorization": token
         }
         try:
-            response = requests.get(url + "/" + contract_number)
+            response = requests.get(url, params=contractParam)
             if response.status_code == 200:
-                response.text: List[Invoice] = jsonable_encoder(response.text)
-                return InvoiceDetails(invoice=response.text)
+                response.text: List[InvoiceDetails] = jsonable_encoder(response.text)
+                return [InvoiceDetails(
+                    contract_number=invoiceDetails.contract_number,
+                    invoice=invoiceDetails.invoice
+                ) for invoiceDetails in response.text]
         except:
             raise RequestResourceError
