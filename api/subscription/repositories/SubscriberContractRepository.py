@@ -8,7 +8,7 @@ from api.configs.Database import get_db_connection
 from api.contact.models.ContactsModel import Contacts
 from api.contact.models.SubscriberContractModel import SubscriberContract
 
-from api.subscription.schemas.SubscriberContractSchema import ContractDtoIncoming, ContractInvoiceParams
+from api.subscription.schemas.SubscriberContractSchema import ContractInvoiceParams, ContractDtoQueryParams
 
 
 class SubscriberContractRepository:
@@ -255,7 +255,7 @@ class SubscriberContractRepository:
             SubscriberContract.deleted_at is not None
         )).scalar()
 
-    def get_contract_by_submitted_params(self, params: ContractDtoIncoming, offset: int, limit: int) ->\
+    def get_contract_by_submitted_params(self, params: ContractDtoQueryParams, offset: int, limit: int) ->\
             Sequence[List[SubscriberContract]]:
         """
         This function fileter a contract by submitted params
@@ -276,7 +276,7 @@ class SubscriberContractRepository:
             ).offset(offset).limit(limit)
         ).all()
 
-    def count_contract(self, params: ContractDtoIncoming) -> int:
+    def count_contract(self, params: ContractDtoQueryParams) -> int:
         """
         This function fileter a contract by submitted params
         :param params:

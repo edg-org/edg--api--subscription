@@ -1,11 +1,13 @@
 import json
 import logging
 from datetime import datetime, date
-from typing import List
+from typing import List, Optional
 
 from pydantic import BaseModel, validator, EmailStr, constr, Field
 
+
 from api.constant import OpenAPIFieldDescription
+from api.contact.schemas.pydantic.SchemaBaseConfig import AllOptional
 
 
 class Identity(BaseModel):
@@ -58,36 +60,12 @@ class ContactInfos(BaseModel):
                          "of the following (Client, Abonné or Prospect)")
 
 
-class IdentityOutput(BaseModel):
-    type: str
-    pid: str
-    given_date: date
-    expire_date: date
+class IdentityOutput(Identity, metaclass=AllOptional):
+    pass
 
 
-class ContactInfosOutput(BaseModel):
-    type: str
-    lastname: str
-    firstname: str
-    birthday: date
-    job: str
-    identity: IdentityOutput
-    address: Address
-
-    @validator('birthday')
-    def check_age(cls, value):
-        today = date.today()
-        age = today.year - value.year - ((today.month, today.day) < (value.month, value.day))
-        if age < 18:
-            raise ValueError("You should be over the age of 18")
-        return value
-
-    @validator('type', allow_reuse=True)
-    def validateType(cls, type_value: str):
-        if type_value.lower().capitalize() in ['Client', 'Prospect', 'Abonné']:
-            return type_value
-        raise ValueError("Invalid contact type, the contact type should by one "
-                         "of the following (Client, Abonné or Prospect)")
+class ContactInfosOutput(ContactInfos, metaclass=AllOptional):
+    pass
 
 
 class ContactsInputDto(BaseModel):

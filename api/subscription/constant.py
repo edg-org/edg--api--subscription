@@ -62,6 +62,7 @@ class OpenAPIFieldDescription:
     IS_BLOCKED_PAYED = "This show whether the pricing should be saved in subscriber microservice or not," \
                        "if the pricing will be saved, so the billing microservice will use it, and calculate " \
                        "amount of money to pay "
+    CONTRACT_SUBSCRIBER_TYPE_NAME = "Name of subscriber type"
     PRICING = "Indicate the pricing of the contract"
     SLICE_NAME = "This field indicate the name of slice"
     LOWER_INDEX = "This indicate the lower index of dunning"
@@ -86,6 +87,8 @@ class OpenAPIFieldDescription:
     TOTAL_POWER_CONSUMED = "Total power consumed"
     TOTAL_ACCUMULATED_PERIOD = "Total accumulated period"
     INVOICE_NUMBER = "Invoice number"
+    INVOICE_DATE_START = "Invoice start date"
+    INVOICE_DATE_END = "Invoice end date"
     INVOICE_DATE = "Invoice date"
     TOTAL_POWER_RECHARGED = "Total power recharged"
     TOTAL_AMOUNT_HT = "Total amount ht"

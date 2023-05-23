@@ -3,8 +3,9 @@ from typing import List
 from fastapi import APIRouter, Depends, status, Query
 
 from api.subscription.schemas.SubscriberContractSchema import ContractDto, \
-    SubscriberContractSchema, ContractDtoIncoming, ContractDtoWithPagination, BillingDto, \
-    SubscriberContractInfoInputUpdate, ContactDtoForBillingService, ContactWithContractAndPricing
+    SubscriberContractSchema, ContractDtoWithPagination, BillingDto, \
+    SubscriberContractInfoInputUpdate, ContactDtoForBillingService, ContactWithContractAndPricing, \
+    ContractDtoQueryParams
 
 from api.subscription.services.SubscriberContractService import SubscriberContactService
 from api.subscription.utilis.JWTBearer import JWTBearer
@@ -71,7 +72,7 @@ def delete_contract(
 async def get_contract_by_submitted_params(
         offset: int = 0,
         limit: int = 10,
-        params: ContractDtoIncoming = Depends(),
+        params: ContractDtoQueryParams = Depends(),
         contract_service: SubscriberContactService = Depends()
 ):
     return contract_service.get_contract_by_submitted_params(

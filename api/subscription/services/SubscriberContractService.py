@@ -16,11 +16,24 @@ from api.subscription.exceptions import ContractNotFound, DeleteContractExceptio
     StatusErrorWhenCurrentStatusIsEqualEdited, ContractIsAlreadyActivated
 
 from api.subscription.repositories.SubscriberContractRepository import SubscriberContractRepository
-from api.subscription.schemas.SubscriberContractSchema import SubscriberContractSchema, ContractDtoIncoming, \
-    ContractDto, ContractDtoWithPagination, BillingDto, SubscriberContractInfoInputUpdate, ContractDetails, \
-    InvoiceDetails, ContractInvoiceDetails, ContactContracts, ContractInvoiceParams, Invoice, \
-    SubscriberContractInfoOutput, ContractInvoiceForBillingService, ContactDtoForBillingService, \
-    ContactWithContractAndPricing
+from api.subscription.schemas.SubscriberContractSchema import \
+    (SubscriberContractSchema,
+    ContractDto,
+    ContractDtoWithPagination,
+    BillingDto,
+    SubscriberContractInfoInputUpdate,
+    ContractDetails,
+    InvoiceDetails,
+    ContractInvoiceDetails,
+    ContactContracts,
+    ContractInvoiceParams,
+    Invoice,
+    SubscriberContractInfoOutput,
+    ContractInvoiceForBillingService,
+    ContactDtoForBillingService,
+    ContactWithContractAndPricing,
+    ContractDtoQueryParams
+)
 from api.subscription.services.GuidGenerator import GuidGenerator
 from api.subscription.services.RequestMaster import RequestMaster
 from api.subscription.utilis.Status import ContractStatus
@@ -276,7 +289,7 @@ class SubscriberContactService:
 
         return self.buildContractDto(contract)
 
-    def get_contract_by_submitted_params(self, params: ContractDtoIncoming, offset: int,
+    def get_contract_by_submitted_params(self, params: ContractDtoQueryParams, offset: int,
                                          limit: int) -> ContractDtoWithPagination:
         """
         This function fileter a contract by submitted params
@@ -350,19 +363,27 @@ class SubscriberContactService:
         if params.contract_number is not None:
             invoice: List[InvoiceDetails] = RequestMaster. \
                 get_invoice(ContractInvoiceForBillingService(
-                invoice_date=params.invoice_date,
+                invoice_date_start=params.invoice_date_start,
+                invoice_date_end=params.invoice_date_end,
                 contract_number=[params.contract_number]),
                 "http://localhost:8082/billing/invoice",
                 "token")
 
         else:
-            invoice: List[InvoiceDetails] = RequestMaster.get_invoice(
-                ContractInvoiceForBillingService(
-                    invoice_date=params.invoice_date,
-                    contract_number=[c.contract_number for c in contracts]
-                ),
-                "http://localhost:8082/billing/invoice",
-                "")
+            try:
+                invoice: List[InvoiceDetails] = RequestMaster.get_invoice(
+                    ContractInvoiceForBillingService(
+                        invoice_date_start=params.invoice_date_start,
+                        invoice_date_end=params.invoice_date_end,
+                        contract_number=[c.contract_number for c in contracts]
+                    ),
+                    "http://localhost:8082/billing/invoice",
+                    "")
+            except:
+               return [InvoiceDetails(
+                    contract_number="dfdsf",
+                    invoice=[Invoice()]
+                )]
 
         return [self.buildContractInvoiceDetails(i.invoice, c) for i in invoice for c in contracts]
 
@@ -400,7 +421,8 @@ class SubscriberContactService:
                     subscriber_type.append(contract.infos['subscription_type']['name'])
                 contracts.append(contract)
         try:
-            pricing: List[BillingDto] = RequestMaster.get_billing_info(subscriber_type, "http://localhost:8082/pricing", "")
+            pricing: List[BillingDto] = RequestMaster.get_billing_info(subscriber_type, "http://localhost:8082/pricing",
+                                                                       "")
         except:
             pricing = [BillingDto()]
         # logging.error(f"aaaa %s ", contracts[0].contacts.infos)
