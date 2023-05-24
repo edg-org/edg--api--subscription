@@ -53,11 +53,17 @@ class HomeInfos(BaseModel):
     equipment: Equipment = Field(description=OpenAPIFieldDescription.EQUIPMENT)
 
 
+class Slices(BaseModel):
+    slice_name: str
+    lower_index: int
+    upper_index: int
+    unit_price: int
+
+
 class Pricing(BaseModel):
-    slice_name: str = Field(description=OpenAPIFieldDescription.SLICE_NAME)
-    lower_index: int = Field(description=OpenAPIFieldDescription.LOWER_INDEX)
-    upper_index: int = Field(description=OpenAPIFieldDescription.UPPER_INDEX)
-    unit_price: int = Field(description=OpenAPIFieldDescription.UNIT_PRICE)
+    name: str = Field(description=OpenAPIFieldDescription.SLICE_NAME)
+    subscription_fee: int = Field(description=OpenAPIFieldDescription.LOWER_INDEX)
+    slices: Slices = Field(description=OpenAPIFieldDescription.UPPER_INDEX)
 
 
 class Dunning(BaseModel):
@@ -65,11 +71,6 @@ class Dunning(BaseModel):
     rank: int = Field(description=OpenAPIFieldDescription.DUNNING_RANK)
     payment_deadline: int = Field(description=OpenAPIFieldDescription.PAYMENT_DEADLINE)
     delay_penality_rate: int = Field(description=OpenAPIFieldDescription.DELAY_PENALTY_RATE)
-
-
-class TrackingType(BaseModel):
-    code: int = Field(description=OpenAPIFieldDescription.TRACKING_CODE)
-    name: str = Field(description=OpenAPIFieldDescription.TRACKING_NAME)
 
 
 class SubscriberContractInfo(BaseModel):
@@ -86,27 +87,29 @@ class SubscriberContractInfo(BaseModel):
     invoicing_frequency: int = Field(description=OpenAPIFieldDescription.INVOICING_FREQUENCY)
     agency: Agency = Field(description=OpenAPIFieldDescription.CONTRACT_INFO_INPUT_AGENCY)
     home_infos: HomeInfos = Field(description=OpenAPIFieldDescription.HomeInfos)
-    is_bocked_payment: bool = Field(description=OpenAPIFieldDescription.IS_BLOCKED_PAYED, default=False)
-    pricing: List[Pricing] | None = Field(description=OpenAPIFieldDescription.PRICING)
-    dunning: List[Dunning] | None = Field(description=OpenAPIFieldDescription.DUNNING)
-    tracking_type: TrackingType = Field(description=OpenAPIFieldDescription.TRACKING_TYPE)
+    is_bocked_pricing: bool = Field(description=OpenAPIFieldDescription.IS_BLOCKED_PAYED, default=False)
 
 
-class SubscriberContractInfoInput(SubscriberContractInfo, metaclass=AllOptional):
+class SubscriberContractInfoDto(SubscriberContractInfo):
+    pricing: Pricing | None = Field(description=OpenAPIFieldDescription.PRICING)
+
+
+class SubscriberContractInfoInput(SubscriberContractInfo):
     delivery_point: DeliveryPoint = Field(description=OpenAPIFieldDescription.CONTRACT_INFO_INPUT_DELIVERY_POINT)
 
 
 class SubscriberContractInfoOutput(SubscriberContractInfo, metaclass=AllOptional):
-    pass
+    delivery_point: DeliveryPoint | None
 
 
-class SubscriberContractInfoInputUpdate(SubscriberContractInfo):
+class SubscriberContractInfoInputUpdate(SubscriberContractInfo, metaclass=OmitFields):
     delivery_point: DeliveryPointUpdate | None = Field(
         description=OpenAPIFieldDescription.CONTRACT_INFO_INPUT_DELIVERY_POINT)
 
-
-class SubscriberContractInfoOutputUpdate(SubscriberContractInfoInputUpdate, metaclass=AllOptional):
-    pass
+    class Config:
+        omit_fields = {'pricing', 'subscription_type', 'deadline_unit_time', 'payment_deadline', 'agency',
+                       'subscribed_power', 'power_of_energy'}
+        arbitrary_types_allowed = True
 
 
 class SubscriberContractSchema(SubscriberContractInfoInput):
@@ -156,15 +159,8 @@ class ContractDtoQueryParams(BaseModel):
     status: CustomerStatus | None = Field(description=OpenAPIFieldDescription.STATUS)
 
 
-class BillingDto(BaseModel):
-    maximum_dunning: int | None = Field(description=OpenAPIFieldDescription.DUNNING)
-    subscription_type: str | None = Field(description=OpenAPIFieldDescription.SUBSCRIBER_TYPE)
-    payment_deadline: int | None = Field(description=OpenAPIFieldDescription.PAYMENT_DEADLINE)
-    deadline_unit_time: str | None = Field(description=OpenAPIFieldDescription.PAYMENT_UNIT_DEADLINE)
-    invoicing_frequency: int | None = Field(description=OpenAPIFieldDescription.INVOICING_FREQUENCY)
-    prime: int | None = Field(description=OpenAPIFieldDescription.PRIME)
-    pricing: List[Pricing] | None = Field(description=OpenAPIFieldDescription.PRICING)
-    dunning: List[Dunning] | None = Field(description=OpenAPIFieldDescription.DUNNING)
+class PricingDto(Pricing, metaclass=AllOptional):
+    pass
 
 
 class Invoice(BaseModel):
@@ -187,11 +183,13 @@ class Invoice(BaseModel):
 
 
 class ContractInvoiceDetails(BaseModel):
+    warning_message: str | None
     consumption_estimated: str | None
     subscription_type: str | None = Field(description=OpenAPIFieldDescription.CONTRACT_SUBSCRIBER_TYPE_NAME)
     payment_deadline: int | None = Field(description=OpenAPIFieldDescription.PAYMENT_DEADLINE)
     subscribed_power: str | None = Field(description=OpenAPIFieldDescription.SUBSCRIBED_POWER)
     delivery_point: DeliveryPoint | None = Field(description=OpenAPIFieldDescription.CONTRACT_INFO_INPUT_DELIVERY_POINT)
+    is_bocked_payment: bool | None = Field(description=OpenAPIFieldDescription.IS_BLOCKED_PAYED)
     agency: Agency | None = Field(description=OpenAPIFieldDescription.CONTRACT_INFO_INPUT_AGENCY)
     invoice: List[Invoice] | None
 
@@ -227,4 +225,3 @@ class ContactDtoForBillingService(ContractDto):
 
 class ContactWithContractAndPricing(BaseModel):
     contact_contract: List[ContactDtoForBillingService]
-    subscriber_type_pricing_infos: List[BillingDto]

@@ -13,27 +13,27 @@ from api.contact.services.ContactsService import ContactsService
 from api.subscription.exceptions import ContractNotFound, DeleteContractException, ContactNotFound, \
     EditContactWhileNotOwner, ContractDisabled, ContractExist, ContractStatusError, RepeatingDeliveryPoint, \
     ContractLevelError, StatusErrorWhenCurrentStatusIsEqualInitial, \
-    StatusErrorWhenCurrentStatusIsEqualEdited, ContractIsAlreadyActivated
+    StatusErrorWhenCurrentStatusIsEqualEdited, ContractIsAlreadyActivated, InvalidMetricNumberOrConsumptionEstimation, \
+    MetricNumberAndConsumptionEstimationCannotBeProvidedAtTheSameTime
 
 from api.subscription.repositories.SubscriberContractRepository import SubscriberContractRepository
 from api.subscription.schemas.SubscriberContractSchema import \
     (SubscriberContractSchema,
-    ContractDto,
-    ContractDtoWithPagination,
-    BillingDto,
-    SubscriberContractInfoInputUpdate,
-    ContractDetails,
-    InvoiceDetails,
-    ContractInvoiceDetails,
-    ContactContracts,
-    ContractInvoiceParams,
-    Invoice,
-    SubscriberContractInfoOutput,
-    ContractInvoiceForBillingService,
-    ContactDtoForBillingService,
-    ContactWithContractAndPricing,
-    ContractDtoQueryParams
-)
+     ContractDto,
+     ContractDtoWithPagination,
+     SubscriberContractInfoInputUpdate,
+     ContractDetails,
+     InvoiceDetails,
+     ContractInvoiceDetails,
+     ContactContracts,
+     ContractInvoiceParams,
+     Invoice,
+     SubscriberContractInfoOutput,
+     ContractInvoiceForBillingService,
+     ContactDtoForBillingService,
+     ContactWithContractAndPricing,
+     ContractDtoQueryParams, PricingDto, Pricing, SubscriberContractInfoDto
+     )
 from api.subscription.services.GuidGenerator import GuidGenerator
 from api.subscription.services.RequestMaster import RequestMaster
 from api.subscription.utilis.Status import ContractStatus
@@ -85,7 +85,6 @@ class SubscriberContactService:
         # Transform contract_schema to a list
         contract_schema = json.dumps([contract.dict() for contract in contract_schema])
         contract_schema = json.loads(contract_schema)
-
         # Check if there are repeating delivery point, if true, then the len of delivery_points will be different
         # to the len of contract_schema
         # if the flag is true, then we set pricing and dunning to null
@@ -94,7 +93,7 @@ class SubscriberContactService:
         for contract in contract_schema:
             delivery_points_on_number.add(contract["delivery_point"]['number'])
             delivery_point_on_metric_number.add(contract["delivery_point"]['metric_number'])
-            if not contract['is_bocked_payment']:
+            if not contract['is_bocked_pricing']:
                 contract['pricing'] = None
                 contract['dunning'] = None
         if (len(delivery_points_on_number) != len(contract_schema) or
@@ -126,11 +125,36 @@ class SubscriberContactService:
         if contract_exist is not None:
             raise ContractExist(" number " + contract_exist.infos['delivery_point']['number'])
 
+        contract_exist = self.subscriber_contract_repository.get_contract_by_delivery_point_on_metric_number(
+            contract_schema['delivery_point']['metric_number']
+        )
+
+        if contract_exist is not None:
+            raise ContractExist(" metric number " + contract_exist.infos['delivery_point']['metric_number'])
+
         if contract_schema['status'] == contract_schema['previous_status']:
             raise ContractStatusError
 
         if contract_schema['level']['name'] == contract_schema['previous_level']:
             raise ContractLevelError
+
+        # for each contract we have to get the pricing information from referential service if is_bocked_pricing is true
+        try:
+            if contract_schema['is_bocked_pricing']:
+                pricingDto: [PricingDto] = RequestMaster.get_pricing_info(
+                    [contract_schema['subscription']['code']],
+                    "http//:localhost:8080/pricing",
+                    ""
+                )
+                contract_schema['pricing'] = [Pricing(
+                    name=pricing.name,
+                    subscription_fee=pricing.subscription_fee,
+                    slices=pricing.slices
+                ) for pricing in pricingDto]
+                contract_schema['pricing'] = None
+        except:
+            contract_schema['pricing'] = None
+
 
         contact = jsonable_encoder(contact)
 
@@ -165,6 +189,32 @@ class SubscriberContactService:
         # If the closing date is set that mean that the contract is resigned
         if contract_exist.closing_date is not None:
             raise ContractDisabled
+
+        if not contract_schema['is_bocked_pricing']:
+            contract_schema['pricing'] = None
+            contract_schema['dunning'] = None
+
+        if (contract_schema['consumption_estimated'] is None
+                and contract_schema['delivery_point'] is None):
+            raise InvalidMetricNumberOrConsumptionEstimation
+
+        if (contract_schema['consumption_estimated'] is None
+                and contract_schema['delivery_point']['metric_number'] is None):
+            raise InvalidMetricNumberOrConsumptionEstimation
+
+        if (contract_schema['consumption_estimated'] is not None
+                and contract_schema['delivery_point']['metric_number'] is not None):
+            raise MetricNumberAndConsumptionEstimationCannotBeProvidedAtTheSameTime
+
+        # check if delivery point on metric_number exist, if true throw error
+        contract_exist_by_delivery_point_on_metric_number = self.subscriber_contract_repository. \
+            get_contract_by_delivery_point_on_metric_number(contract_schema['delivery_point']['metric_number'])
+        # logging.error("metric number %s", contract_exist_by_delivery_point_on_metric_number)
+        if (contract_exist_by_delivery_point_on_metric_number is not None
+                and contract_exist_by_delivery_point_on_metric_number.contract_number != contract_exist.contract_number
+        ):
+            raise ContractExist(" metric number " + contract_schema['delivery_point']['metric_number'] +
+                                " Please provide a correct metric number")
 
         # check status logic
         contract_exist = self.contract_status_logic(contract_exist, contract_schema['status'])
@@ -336,21 +386,6 @@ class SubscriberContactService:
             raise ContractNotFound
         return [self.buildContractDto(c) for c in contracts]
 
-    def get_pricing(self, number) -> BillingDto | None:
-        """
-        Request referential system to get a billing information
-        :param number:
-        :return: BillingDto
-        """
-        # Check if contact exist
-        contract: SubscriberContract = self.subscriber_contract_repository. \
-            get_contract_by_contract_uid(number)
-        if contract is None:
-            raise ContractNotFound
-        # Do request to the external service and get data
-        return RequestMaster. \
-            get_billing_info([""], "http://localhost:8082/pricing", "")
-
     def get_contract_details(self, number, params: ContractInvoiceParams) -> List[ContractInvoiceDetails]:
         contracts: Sequence[List[SubscriberContract]] = self.subscriber_contract_repository. \
             get_contact_contracts(number, params)
@@ -380,7 +415,7 @@ class SubscriberContactService:
                     "http://localhost:8082/billing/invoice",
                     "")
             except:
-               return [InvoiceDetails(
+                return [InvoiceDetails(
                     contract_number="dfdsf",
                     invoice=[Invoice()]
                 )]
@@ -390,24 +425,14 @@ class SubscriberContactService:
     def buildContractInvoiceDetails(self, invoice: List[Invoice], contract: ContractDto) \
             -> ContractInvoiceDetails:
         return ContractInvoiceDetails(
-            consumption_estimated=contract.infos.consumption_estimated,
-            subscription_type=contract.infos.subscription_type,
+            consumption_estimated=str(contract.infos.consumption_estimated.value) + " " +
+                                  str(contract.infos.consumption_estimated.measurement_unit),
+            subscription_type=contract.infos.subscription_type.name,
             payment_deadline=contract.infos.payment_deadline,
-            deadline_unit_time=contract.infos.deadline_unit_time,
             subscribed_power=contract.infos.subscribed_power,
-            power_of_energy=contract.infos.power_of_energy,
-            status=contract.infos.status,
-            previous_status=contract.infos.previous_status,
-            level=contract.infos.level,
-            previous_level=contract.infos.previous_level,
-            invoicing_frequency=contract.infos.invoicing_frequency,
             delivery_point=contract.infos.delivery_point,
             agency=contract.infos.agency,
-            home_infos=contract.infos.home_infos,
-            is_bocked_payment=contract.infos.is_bocked_payment,
-            pricing=contract.infos.pricing,
-            dunning=contract.infos.dunning,
-            tracking_type=contract.infos.tracking_type,
+            is_bocked_pricing=contract.infos.is_bocked_pricing,
             invoice=invoice
         )
 
@@ -421,10 +446,10 @@ class SubscriberContactService:
                     subscriber_type.append(contract.infos['subscription_type']['name'])
                 contracts.append(contract)
         try:
-            pricing: List[BillingDto] = RequestMaster.get_billing_info(subscriber_type, "http://localhost:8082/pricing",
+            pricing: List[PricingDto] = RequestMaster.get_pricing_info(subscriber_type, "http://localhost:8082/pricing",
                                                                        "")
         except:
-            pricing = [BillingDto()]
+            pricing = [PricingDto()]
         # logging.error(f"aaaa %s ", contracts[0].contacts.infos)
         contracts: List[ContactDtoForBillingService] = [ContactDtoForBillingService(
             contact=c.contacts.infos,

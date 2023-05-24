@@ -235,7 +235,7 @@ class SubscriberContractRepository:
         """
         return self.db.scalars(select(SubscriberContract).where(
             SubscriberContract.infos['delivery_point']['number'] == delivery_point,
-            SubscriberContract.deleted_at is None
+            SubscriberContract.deleted_at == None
         )).first()
 
     def get_contract_by_delivery_point_on_metric_number(self, metric_number: str) -> SubscriberContract:
@@ -246,7 +246,7 @@ class SubscriberContractRepository:
         """
         return self.db.scalars(select(SubscriberContract).where(
             SubscriberContract.infos['delivery_point']['metric_number'] == metric_number,
-            SubscriberContract.deleted_at is None
+            SubscriberContract.deleted_at == None
         )).first()
 
     def count_contract_by_contact_number(self, contact_number: str) -> int:

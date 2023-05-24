@@ -3,7 +3,7 @@ from typing import List
 from fastapi import APIRouter, Depends, status
 
 from api.contact.schemas.pydantic.ContactsSchema import ContactOutputDto, ContactsInputDto, ContactDtoWithPagination, \
-    SearchByParams, SearchAllContact
+    SearchByParams, SearchAllContact, ContactsInputUpdateDto
 from api.contact.services.ContactsService import ContactsService
 from api.subscription.schemas.SubscriberContractSchema import ContractDto, InvoiceDetails, ContractInvoiceDetails, \
     ContractInvoiceParams, ContactContracts
@@ -35,7 +35,7 @@ def create_contact(
 )
 def update_contact(
         number: str,
-        contact: ContactsInputDto,
+        contact: ContactsInputUpdateDto,
         contact_service: ContactsService = Depends()
 ):
     return contact_service.update_contact(number, contact)

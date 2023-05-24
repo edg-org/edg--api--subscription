@@ -12,7 +12,7 @@ from api.exceptions import RepeatingIdentityPid, PhoneNumberExist, EmailExist, I
 from api.contact.models.ContactsModel import Contacts
 from api.contact.repositories.ContactsRepository import ContactsRepository
 from api.contact.schemas.pydantic.ContactsSchema import ContactsInputDto, ContactOutputDto, ContactDtoWithPagination, \
-    SearchByParams, SearchAllContact
+    SearchByParams, SearchAllContact, ContactsInputUpdateDto
 from api.contact.services.GuidGenerator import GuidGenerator
 
 
@@ -23,11 +23,11 @@ class ContactsService:
         self.contacts_repository = contacts_repository
 
     def create_contact(self, contact_body: List[ContactsInputDto]) -> List[ContactOutputDto]:
-        # Convertissons notre object en json
+        # Conversations notre object en json
 
         # Transform contract_schema to a list
 
-        contact_body = [c.infos.dict() for c in contact_body]
+        contact_body = [c.dict() for c in contact_body]
 
         contact_body = json.loads(json.dumps(contact_body, default=str))
 
@@ -77,9 +77,9 @@ class ContactsService:
             customer_number=GuidGenerator.contactUID(contact_body['identity']['pid']),
         )
 
-    def update_contact(self, number: str, contact_body: ContactsInputDto) -> ContactOutputDto:
+    def update_contact(self, number: str, contact_body: ContactsInputUpdateDto) -> ContactOutputDto:
         # Convertissons notre object en json
-        contact_body.infos = json.loads(contact_body.infos.json())
+        contact_body = json.loads(contact_body.json())
         '''
             La modification est effectuer par le numero d'identifiant unique (passport ou carte d'identite) 
             pour ce fait nous verifions l'existance de l'utilisateur dans la bd, au cas ou il n'existe pas 
@@ -90,7 +90,7 @@ class ContactsService:
             raise ContactNotFound
 
         checkIdentity: Contacts = self.contacts_repository.get_contact_by_pid_for_admin(
-            contact_body.infos['identity']['pid'])
+            contact_body['identity']['pid'])
         if checkIdentity is not None:
             if checkIdentity.infos['identity']['pid'] != contact.infos['identity']['pid']:
                 raise IdentityPidExist
@@ -99,21 +99,21 @@ class ContactsService:
             raise ContactIsDisable
         # Pendant la modification nous verifions si le numero modifie n'existe pas dans la bd
         contactByPhone: Contacts = self.contacts_repository.get_contact_by_phone_for_admin(
-            contact_body.infos['address']['telephone'])
+            contact_body['address']['telephone'])
         if contactByPhone is not None:
             if contactByPhone.customer_number != contact.customer_number:
                 raise PhoneNumberExist
 
         # Pendant la modification nous verifions si l'email modifie n'existe pas dans la bd
         contactByEmail: Contacts = self.contacts_repository.get_contact_by_email_for_admin(
-            contact_body.infos['address']['email'])
+            contact_body['address']['email'])
         if contactByEmail is not None:
             if contactByEmail.customer_number != contact.customer_number:
                 raise EmailExist
 
         return self.buildContractOutputDto(self.contacts_repository.update_contact(
             Contacts(
-                infos=contact_body.infos,
+                infos=contact_body,
                 updated_at=datetime.now().replace(microsecond=0),
                 created_at=contact.created_at,
                 deleted_at=contact.deleted_at,

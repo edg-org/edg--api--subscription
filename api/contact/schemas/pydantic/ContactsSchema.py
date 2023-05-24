@@ -5,9 +5,8 @@ from typing import List, Optional
 
 from pydantic import BaseModel, validator, EmailStr, constr, Field
 
-
 from api.constant import OpenAPIFieldDescription
-from api.contact.schemas.pydantic.SchemaBaseConfig import AllOptional
+from api.contact.schemas.pydantic.SchemaBaseConfig import AllOptional, OmitFields
 
 
 class Identity(BaseModel):
@@ -31,6 +30,7 @@ class Identity(BaseModel):
 
 class Address(BaseModel):
     quartier: str
+    city: str | None
     email: EmailStr
     telephone: constr(regex=r'^\+224-\d{3}-\d{2}-\d{2}-\d{2}$')
 
@@ -68,8 +68,13 @@ class ContactInfosOutput(ContactInfos, metaclass=AllOptional):
     pass
 
 
-class ContactsInputDto(BaseModel):
-    infos: ContactInfos
+class ContactsInputDto(ContactInfos, metaclass=OmitFields):
+    pass
+
+
+class ContactsInputUpdateDto(ContactInfos, metaclass=OmitFields):
+    class Config:
+        omit_fields = {'birthday'}
 
 
 class ContactOutputDto(BaseModel):

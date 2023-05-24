@@ -3,7 +3,7 @@ from typing import List
 from fastapi import APIRouter, Depends, status, Query
 
 from api.subscription.schemas.SubscriberContractSchema import ContractDto, \
-    SubscriberContractSchema, ContractDtoWithPagination, BillingDto, \
+    SubscriberContractSchema, ContractDtoWithPagination, \
     SubscriberContractInfoInputUpdate, ContactDtoForBillingService, ContactWithContractAndPricing, \
     ContractDtoQueryParams
 
@@ -80,20 +80,6 @@ async def get_contract_by_submitted_params(
         offset,
         limit
     )
-
-
-@SubscriberContractAPIRouter.get(
-    path="/{number}/invoicinginfos",
-    response_model=BillingDto,
-    status_code=status.HTTP_200_OK,
-    summary="This endpoint filter contract by contract unique number",
-    description="This endpoint filter contract by contract unique number",
-)
-async def get_contract_by_contract_uid_for_client(
-        number: str,
-        contract_service: SubscriberContactService = Depends()
-):
-    return contract_service.get_pricing(number)
 
 
 # This endpoint will receive a list of contract_number and fetch information about contact and contracts

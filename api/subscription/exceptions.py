@@ -119,3 +119,20 @@ class ContractIsAlreadyActivated(HTTPException):
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="The contract is already activated"
         )
+
+
+class InvalidMetricNumberOrConsumptionEstimation(HTTPException):
+    def __init__(self, message: str = ""):
+        super().__init__(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Consumption estimation or Metric number should be provided " + message
+        )
+
+
+class MetricNumberAndConsumptionEstimationCannotBeProvidedAtTheSameTime(HTTPException):
+    def __init__(self):
+        super().__init__(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Consumption estimation and Metric number shouldn't be provided at the sametime, "
+                   "please remove one of them "
+        )
