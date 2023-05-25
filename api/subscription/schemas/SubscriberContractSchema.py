@@ -98,7 +98,7 @@ class SubscriberContractInfoInput(SubscriberContractInfo):
     delivery_point: DeliveryPoint = Field(description=OpenAPIFieldDescription.CONTRACT_INFO_INPUT_DELIVERY_POINT)
 
 
-class SubscriberContractInfoOutput(SubscriberContractInfo, metaclass=AllOptional):
+class SubscriberContractInfoOutput(SubscriberContractInfoDto, metaclass=AllOptional):
     delivery_point: DeliveryPoint | None
 
 
@@ -209,8 +209,8 @@ class InvoiceDetails(BaseModel):
 
 class ContractInvoiceParams(BaseModel):
     contract_number: str | None = Field(description=OpenAPIFieldDescription.CONTRACT_UID)
-    invoice_date_start: str | None = Field(description=OpenAPIFieldDescription.INVOICE_DATE_START)
-    invoice_date_end: str | None = Field(description=OpenAPIFieldDescription.INVOICE_DATE_END)
+    invoice_date_start: date | None = Field(description=OpenAPIFieldDescription.INVOICE_DATE_START)
+    invoice_date_end: date | None = Field(description=OpenAPIFieldDescription.INVOICE_DATE_END)
 
 
 class ContractInvoiceForBillingService(BaseModel):

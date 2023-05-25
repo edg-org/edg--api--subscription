@@ -1,6 +1,6 @@
 import json
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta, date
 from typing import List, Sequence, cast
 
 from fastapi import Depends
@@ -139,23 +139,8 @@ class SubscriberContactService:
             raise ContractLevelError
 
         # for each contract we have to get the pricing information from referential service if is_bocked_pricing is true
-        try:
-            if contract_schema['is_bocked_pricing']:
-                pricingDto: [PricingDto] = RequestMaster.get_pricing_info(
-                    [contract_schema['subscription']['code']],
-                    "http//:localhost:8080/pricing",
-                    ""
-                )
-                contract_schema['pricing'] = [Pricing(
-                    name=pricing.name,
-                    subscription_fee=pricing.subscription_fee,
-                    slices=pricing.slices
-                ) for pricing in pricingDto]
-                contract_schema['pricing'] = None
-        except:
-            contract_schema['pricing'] = None
-
-
+        contract_schema['pricing'] = self.get_pricing(contract_schema['is_blocked_pricing'],
+                                                      contract_schema['subscription_type']['code'])
         contact = jsonable_encoder(contact)
 
         return SubscriberContract(
@@ -164,6 +149,22 @@ class SubscriberContactService:
             customer_number=contract_schema['customer_number'],
             contract_number=GuidGenerator.contractUID(contact['infos']['identity']['pid']),
         )
+
+    def get_pricing(self, is_bocked_pricing: bool, subscription_code: int) -> Pricing | None:
+        try:
+            if is_bocked_pricing:
+                pricingDto: PricingDto = RequestMaster.get_pricing_info(
+                    subscription_code,
+                    "http//:localhost:8080/pricing",
+                    ""
+                )
+                return Pricing(
+                    name=pricingDto.name,
+                    subscription_fee=pricingDto.subscription_fee,
+                    slices=pricingDto.slices
+                )
+        except:
+            return None
 
     def update_contract(self, contract_number: str, contract_schema: SubscriberContractInfoInputUpdate) -> ContractDto:
         """
@@ -190,22 +191,6 @@ class SubscriberContactService:
         if contract_exist.closing_date is not None:
             raise ContractDisabled
 
-        if not contract_schema['is_bocked_pricing']:
-            contract_schema['pricing'] = None
-            contract_schema['dunning'] = None
-
-        if (contract_schema['consumption_estimated'] is None
-                and contract_schema['delivery_point'] is None):
-            raise InvalidMetricNumberOrConsumptionEstimation
-
-        if (contract_schema['consumption_estimated'] is None
-                and contract_schema['delivery_point']['metric_number'] is None):
-            raise InvalidMetricNumberOrConsumptionEstimation
-
-        if (contract_schema['consumption_estimated'] is not None
-                and contract_schema['delivery_point']['metric_number'] is not None):
-            raise MetricNumberAndConsumptionEstimationCannotBeProvidedAtTheSameTime
-
         # check if delivery point on metric_number exist, if true throw error
         contract_exist_by_delivery_point_on_metric_number = self.subscriber_contract_repository. \
             get_contract_by_delivery_point_on_metric_number(contract_schema['delivery_point']['metric_number'])
@@ -224,6 +209,15 @@ class SubscriberContactService:
         contract_schema['previous_status'] = contract_exist.infos['status']
         contract_schema['subscription_type'] = contract_exist.infos['subscription_type']
         contract_schema['delivery_point']['number'] = contract_exist.infos['delivery_point']['number']
+        # check if is_blocked_pricing is set
+        if contract_schema['is_bocked_pricing'] and not contract_exist.infos['is_bocked_pricing']:
+            # we have to fetch pricing info from referential service
+            contract_schema['pricing'] = self.get_pricing(contract_schema['is_blocked_pricing'],
+                                                          contract_schema['subscription_type']['code'])
+
+        # if the flag is set to false, so the pricing is None
+        if contract_schema['is_bocked_pricing']:
+            contract_schema['pricing'] = None
 
         contract: SubscriberContract = self.subscriber_contract_repository.update_contract(
             SubscriberContract(
@@ -393,6 +387,36 @@ class SubscriberContactService:
             raise ContractNotFound
         # build contract dto
         contracts: List[ContractDto] = [self.buildContractDto(c) for c in contracts]
+
+        """
+           Managing of invoice_date_start and invoice_date_end
+            --- if invoice_date_start is empty and invoice_date_end is too, so we take the current month-1 for 
+            the invoice_date_start and current month -6 for the invoice_date_end
+            --- if invoice_date_start is not empty and invoice_date_end is empty, so we initialize the invoice_date_end 
+            to invoice_date_start
+            --- if invoice_date_start is not empty and invoice_date_start is not empty, we will check the interval 
+            between those date, if the interval is more than 6 month, so we will return the last resent 6 months 
+            according to the current month.
+            The invoice_date_start and invoice_date_end starts and the first day of month
+        """
+        if params.invoice_date_end is None and params.invoice_date_start is None:
+            params.invoice_date_start = (timedelta(weeks=-4) + date.today()).replace(day=1)
+            params.invoice_date_end = (timedelta(weeks=-4 * 7) + date.today()).replace(day=1)
+
+        if params.invoice_date_start is not None and params.invoice_date_end is None:
+            params.invoice_date_end = params.invoice_date_start
+
+        # If the interval of date is more than 6 months
+        if (
+                params.invoice_date_start is not None
+                and
+                params.invoice_date_end is not None
+                and
+                (params.invoice_date_start - params.invoice_date_end).days > 168
+        ):
+            params.invoice_date_end = (timedelta(weeks=-4 * 6) + params.invoice_date_start).replace(day=1)
+
+        # logging.error("start date "+str(params.invoice_date_start) + " end date " + str(params.invoice_date_end))
 
         # get invoice from billing microservice
         if params.contract_number is not None:

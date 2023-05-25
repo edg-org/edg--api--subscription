@@ -32,14 +32,14 @@ class RequestMaster:
         return response.text
 
     @classmethod
-    def get_pricing_info(cls, subscriber_code: List[str], url: str, token: str) -> List[PricingDto]:
+    def get_pricing_info(cls, subscriber_code: int, url: str, token: str) -> PricingDto:
         header = {
             "Authorization": token
         }
         try:
             response = requests.get(url, params=subscriber_code)
             if response.status_code == 200:
-                response.text: List[PricingDto] = jsonable_encoder(response.text)
+                response.text: PricingDto = jsonable_encoder(response.text)
                 return [PricingDto(
 
                 ) for billing in response.text]
