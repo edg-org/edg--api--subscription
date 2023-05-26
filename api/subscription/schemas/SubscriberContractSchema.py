@@ -32,12 +32,12 @@ class ConsumptionEstimated(BaseModel):
     measurement_unit: str = Field(description=OpenAPIFieldDescription.SUBSCRIPTION_NAME)
 
 
-class DeliveryPoint(BaseModel):
+class DeliveryPoint(OmitFields):
     number: str = Field(description=OpenAPIFieldDescription.DELIVERY_NUMBER)
     metric_number: str | None = Field(description=OpenAPIFieldDescription.METRIC_NUMBER)
 
 
-class DeliveryPointUpdate(DeliveryPoint, metaclass=OmitFields):
+class DeliveryPointUpdate(DeliveryPoint):
     class Config:
         omit_fields = {'number'}
 
@@ -63,7 +63,7 @@ class Slices(BaseModel):
 class Pricing(BaseModel):
     name: str = Field(description=OpenAPIFieldDescription.SLICE_NAME)
     subscription_fee: int = Field(description=OpenAPIFieldDescription.LOWER_INDEX)
-    slices: Slices = Field(description=OpenAPIFieldDescription.UPPER_INDEX)
+    slices: List[Slices] = Field(description=OpenAPIFieldDescription.UPPER_INDEX)
 
 
 class Dunning(BaseModel):
@@ -73,7 +73,7 @@ class Dunning(BaseModel):
     delay_penality_rate: int = Field(description=OpenAPIFieldDescription.DELAY_PENALTY_RATE)
 
 
-class SubscriberContractInfo(BaseModel):
+class SubscriberContractInfo(OmitFields):
     consumption_estimated: ConsumptionEstimated | None
     subscription_type: SubscriptionType = Field(description=OpenAPIFieldDescription.CONTRACT_INFO_INPUT_SUBSCRIBER_TYPE)
     payment_deadline: int = Field(description=OpenAPIFieldDescription.PAYMENT_DEADLINE)
@@ -87,7 +87,7 @@ class SubscriberContractInfo(BaseModel):
     invoicing_frequency: int = Field(description=OpenAPIFieldDescription.INVOICING_FREQUENCY)
     agency: Agency = Field(description=OpenAPIFieldDescription.CONTRACT_INFO_INPUT_AGENCY)
     home_infos: HomeInfos = Field(description=OpenAPIFieldDescription.HomeInfos)
-    is_bocked_pricing: bool = Field(description=OpenAPIFieldDescription.IS_BLOCKED_PAYED, default=False)
+    is_blocked_pricing: bool = Field(description=OpenAPIFieldDescription.IS_BLOCKED_PAYED, default=False)
 
 
 class SubscriberContractInfoDto(SubscriberContractInfo):
@@ -102,14 +102,13 @@ class SubscriberContractInfoOutput(SubscriberContractInfoDto, metaclass=AllOptio
     delivery_point: DeliveryPoint | None
 
 
-class SubscriberContractInfoInputUpdate(SubscriberContractInfo, metaclass=OmitFields):
+class SubscriberContractInfoInputUpdate(SubscriberContractInfoDto):
     delivery_point: DeliveryPointUpdate | None = Field(
         description=OpenAPIFieldDescription.CONTRACT_INFO_INPUT_DELIVERY_POINT)
 
     class Config:
         omit_fields = {'pricing', 'subscription_type', 'deadline_unit_time', 'payment_deadline', 'agency',
                        'subscribed_power', 'power_of_energy'}
-        arbitrary_types_allowed = True
 
 
 class SubscriberContractSchema(SubscriberContractInfoInput):

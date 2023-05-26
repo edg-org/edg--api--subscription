@@ -30,12 +30,12 @@ class Identity(BaseModel):
 
 class Address(BaseModel):
     quartier: str
-    city: str | None
+    city: str
     email: EmailStr
     telephone: constr(regex=r'^\+224-\d{3}-\d{2}-\d{2}-\d{2}$')
 
 
-class ContactInfos(BaseModel):
+class ContactInfos(OmitFields):
     type: str
     lastname: str
     firstname: str
@@ -46,11 +46,12 @@ class ContactInfos(BaseModel):
 
     @validator('birthday')
     def check_age(cls, value):
-        today = date.today()
-        age = today.year - value.year - ((today.month, today.day) < (value.month, value.day))
-        if age < 18:
-            raise ValueError("You should be over the age of 18")
-        return value
+        if cls.__name__ != 'ContactsInputUpdateDto':
+            today = date.today()
+            age = today.year - value.year - ((today.month, today.day) < (value.month, value.day))
+            if age < 18:
+                raise ValueError("You should be over the age of 18")
+            return value
 
     @validator('type', allow_reuse=True)
     def validateType(cls, type_value: str):
@@ -68,11 +69,11 @@ class ContactInfosOutput(ContactInfos, metaclass=AllOptional):
     pass
 
 
-class ContactsInputDto(ContactInfos, metaclass=OmitFields):
+class ContactsInputDto(ContactInfos):
     pass
 
 
-class ContactsInputUpdateDto(ContactInfos, metaclass=OmitFields):
+class ContactsInputUpdateDto(ContactInfos):
     class Config:
         omit_fields = {'birthday'}
 

@@ -13,7 +13,7 @@ WORKDIR /app
 
 RUN /root/.local/bin/pipenv install --system --deploy --ignore-pipfile
 
-FROM tiangolo/uvicorn-gunicorn-fastapi:python${PYTHON_TAG}
+FROM tiangolo/uvicorn-gunicorn-fastapi:python${PYTHON_TAG}-slim
 
 LABEL org.opencontainers.image.source=https://github.com/${GH_USER}/${GH_REPO}
 

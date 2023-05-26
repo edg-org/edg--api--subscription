@@ -136,3 +136,11 @@ class MetricNumberAndConsumptionEstimationCannotBeProvidedAtTheSameTime(HTTPExce
             detail="Consumption estimation and Metric number shouldn't be provided at the sametime, "
                    "please remove one of them "
         )
+
+
+class ContactOrContractNotFound(HTTPException):
+    def __init__(self):
+        super().__init__(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="With the providing data we cannot found any contact or contract"
+        )

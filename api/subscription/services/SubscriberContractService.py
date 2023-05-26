@@ -14,7 +14,7 @@ from api.subscription.exceptions import ContractNotFound, DeleteContractExceptio
     EditContactWhileNotOwner, ContractDisabled, ContractExist, ContractStatusError, RepeatingDeliveryPoint, \
     ContractLevelError, StatusErrorWhenCurrentStatusIsEqualInitial, \
     StatusErrorWhenCurrentStatusIsEqualEdited, ContractIsAlreadyActivated, InvalidMetricNumberOrConsumptionEstimation, \
-    MetricNumberAndConsumptionEstimationCannotBeProvidedAtTheSameTime
+    MetricNumberAndConsumptionEstimationCannotBeProvidedAtTheSameTime, ContactOrContractNotFound
 
 from api.subscription.repositories.SubscriberContractRepository import SubscriberContractRepository
 from api.subscription.schemas.SubscriberContractSchema import \
@@ -93,7 +93,7 @@ class SubscriberContactService:
         for contract in contract_schema:
             delivery_points_on_number.add(contract["delivery_point"]['number'])
             delivery_point_on_metric_number.add(contract["delivery_point"]['metric_number'])
-            if not contract['is_bocked_pricing']:
+            if not contract['is_blocked_pricing']:
                 contract['pricing'] = None
                 contract['dunning'] = None
         if (len(delivery_points_on_number) != len(contract_schema) or
@@ -139,8 +139,8 @@ class SubscriberContactService:
             raise ContractLevelError
 
         # for each contract we have to get the pricing information from referential service if is_bocked_pricing is true
-        contract_schema['pricing'] = self.get_pricing(contract_schema['is_blocked_pricing'],
-                                                      contract_schema['subscription_type']['code'])
+        contract_schema['pricing'] = jsonable_encoder(self.get_pricing(contract_schema['is_blocked_pricing'],
+                                                      contract_schema['subscription_type']['code']))
         contact = jsonable_encoder(contact)
 
         return SubscriberContract(
@@ -164,7 +164,16 @@ class SubscriberContactService:
                     slices=pricingDto.slices
                 )
         except:
-            return None
+            return Pricing(
+                name="First",
+                subscription_fee=90,
+                slices=[{
+                    "slice_name": "str",
+                    "lower_index": 90,
+                    "upper_index": 20,
+                    "unit_price": 40
+                }]
+            )
 
     def update_contract(self, contract_number: str, contract_schema: SubscriberContractInfoInputUpdate) -> ContractDto:
         """
@@ -210,14 +219,20 @@ class SubscriberContactService:
         contract_schema['subscription_type'] = contract_exist.infos['subscription_type']
         contract_schema['delivery_point']['number'] = contract_exist.infos['delivery_point']['number']
         # check if is_blocked_pricing is set
-        if contract_schema['is_bocked_pricing'] and not contract_exist.infos['is_bocked_pricing']:
+        if contract_schema['is_blocked_pricing']:
             # we have to fetch pricing info from referential service
-            contract_schema['pricing'] = self.get_pricing(contract_schema['is_blocked_pricing'],
-                                                          contract_schema['subscription_type']['code'])
+            contract_schema['pricing'] = jsonable_encoder(self.get_pricing(contract_schema['is_blocked_pricing'],
+                                                          contract_schema['subscription_type']['code']))
 
         # if the flag is set to false, so the pricing is None
-        if contract_schema['is_bocked_pricing']:
+        if not contract_schema['is_blocked_pricing']:
             contract_schema['pricing'] = None
+        # set immutables fields
+        contract_schema['payment_deadline'] = contract_exist.infos['payment_deadline']
+        contract_schema['deadline_unit_time'] = contract_exist.infos['deadline_unit_time']
+        contract_schema['subscribed_power'] = contract_exist.infos['subscribed_power']
+        contract_schema['power_of_energy'] = contract_exist.infos['power_of_energy']
+        contract_schema['agency'] = contract_exist.infos['agency']
 
         contract: SubscriberContract = self.subscriber_contract_repository.update_contract(
             SubscriberContract(
@@ -383,8 +398,8 @@ class SubscriberContactService:
     def get_contract_details(self, number, params: ContractInvoiceParams) -> List[ContractInvoiceDetails]:
         contracts: Sequence[List[SubscriberContract]] = self.subscriber_contract_repository. \
             get_contact_contracts(number, params)
-        if contracts is None:
-            raise ContractNotFound
+        if len(contracts) == 0:
+            raise ContactOrContractNotFound
         # build contract dto
         contracts: List[ContractDto] = [self.buildContractDto(c) for c in contracts]
 
@@ -461,19 +476,30 @@ class SubscriberContactService:
         )
 
     def get_contract_and_contact_by_contract_uid(self, number: List[str]) -> ContactWithContractAndPricing:
-        contracts: List[SubscriberContract] = []
-        subscriber_type: List[str] = []
+        contractsDto: List[SubscriberContract] = []
         for contract_number in number:
             contract = self.subscriber_contract_repository.get_contract_by_contract_uid(contract_number)
             if contract is not None:
-                if contract.infos['subscription_type']['name'] not in subscriber_type:
-                    subscriber_type.append(contract.infos['subscription_type']['name'])
-                contracts.append(contract)
-        try:
-            pricing: List[PricingDto] = RequestMaster.get_pricing_info(subscriber_type, "http://localhost:8082/pricing",
-                                                                       "")
-        except:
-            pricing = [PricingDto()]
+                if not contract.infos['is_blocked_pricing']:
+                    try:
+                        pricing: PricingDto = RequestMaster.get_pricing_info(
+                            int(contract.infos['subscription_type']['code']),
+                            "http://localhost:8082/pricing",
+                            ""
+                        )
+                    except:
+                        contract.infos['pricing'] = Pricing(
+                            name="First",
+                            subscription_fee=90,
+                            slices=[{
+                                "slice_name": "str",
+                                "lower_index": 90,
+                                "upper_index": 20,
+                                "unit_price": 40
+                            }]
+                        )
+                contractsDto.append(contract)
+
         # logging.error(f"aaaa %s ", contracts[0].contacts.infos)
         contracts: List[ContactDtoForBillingService] = [ContactDtoForBillingService(
             contact=c.contacts.infos,
@@ -487,9 +513,8 @@ class SubscriberContactService:
             is_activated=c.is_activated,
             contract_number=c.contract_number,
             customer_number=c.customer_number
-        ) for c in contracts]
+        ) for c in contractsDto]
 
         return ContactWithContractAndPricing(
-            contact_contract=contracts,
-            subscriber_type_pricing_infos=pricing
+            contact_contract=contracts
         )

@@ -110,6 +110,8 @@ class ContactsService:
         if contactByEmail is not None:
             if contactByEmail.customer_number != contact.customer_number:
                 raise EmailExist
+        # set birthday, because it immutable
+        contact_body['birthday'] = contact.infos['birthday']
 
         return self.buildContractOutputDto(self.contacts_repository.update_contact(
             Contacts(

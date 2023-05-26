@@ -1,6 +1,6 @@
-from typing import Optional
+from typing import Optional, Set
 
-from pydantic.main import ModelMetaclass
+from pydantic.main import ModelMetaclass, BaseModel
 
 
 class AllOptional(ModelMetaclass):
@@ -15,24 +15,20 @@ class AllOptional(ModelMetaclass):
         return super().__new__(cls, name, bases, namespace, **kwargs)
 
 
-class OmitFields(ModelMetaclass):
-    def __new__(self, name, bases, namespaces, **kwargs):
-        omit_fields = getattr(namespaces.get("Config", {}), "omit_fields", {})
-        fields = namespaces.get('__fields__', {})
-        annotations = namespaces.get('__annotations__', {})
-        for base in bases:
-            fields.update(base.__fields__)
-            annotations.update(base.__annotations__)
-        merged_keys = fields.keys() & annotations.keys()
-        [merged_keys.add(field) for field in fields]
+class OmitFields(BaseModel):
+    class Config:
+        omit_fields: Set[str] = set()
+
+    @classmethod
+    def __init_subclass__(cls, **kwargs):
+        omit_fields = getattr(cls.Config, "omit_fields", set())
+        fields = cls.__fields__
         new_fields = {}
-        new_annotations = {}
-        for field in merged_keys:
-            if not field.startswith('__') and field not in omit_fields:
-                new_annotations[field] = annotations.get(field, fields[field].type_)
-                new_fields[field] = fields[field]
-        namespaces['__annotations__'] = new_annotations
-        namespaces['__fields__'] = new_fields
-        return super().__new__(self, name, bases, namespaces, **kwargs)
 
+        for field_name, field in fields.items():
+            if field_name not in omit_fields:
+                new_fields[field_name] = field
 
+        cls.__fields__ = new_fields
+
+        super().__init_subclass__(**kwargs)
