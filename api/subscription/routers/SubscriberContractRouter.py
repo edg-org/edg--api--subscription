@@ -1,25 +1,28 @@
 from typing import List
-
 from fastapi import APIRouter, Depends, status, Query
-
-from api.subscription.schemas.SubscriberContractSchema import ContractDto, \
-    SubscriberContractSchema, ContractDtoWithPagination, \
-    SubscriberContractInfoInputUpdate, ContactDtoForBillingService, ContactWithContractAndPricing, \
-    ContractDtoQueryParams
-
-from api.subscription.services.SubscriberContractService import SubscriberContactService
 from api.subscription.utilis.JWTBearer import JWTBearer
-
-SubscriberContractAPIRouter: APIRouter = APIRouter(
-    prefix="/v1/subscriptions", tags=["subscription"],
-    # dependencies=[Depends(JWTBearer())]
+from api.subscription.services.SubscriberContractService import SubscriberContactService
+from api.subscription.schemas.SubscriberContractSchema import (
+    ContractDto,
+    ContractDtoQueryParams,
+    SubscriberContractSchema, 
+    ContractDtoWithPagination,
+    ContactDtoForBillingService, 
+    ContactWithContractAndPricing,
+    SubscriberContractInfoInputUpdate
 )
 
+env = get_environment_variables()
+router_path = env.api_routers_prefix + env.api_version
+
+SubscriberContractAPIRouter = APIRouter(
+    prefix=router_path + "/subscriptions",
+    tags=["Subscription"],
+)
 
 @SubscriberContractAPIRouter.post(
     "/",
     response_model=List[ContractDto],
-    # response_class=ContractDto,
     status_code=status.HTTP_201_CREATED,
     summary="This endpoint create a contract for contact",
     description="Using this endpoint, you will assign to contact a contract",
@@ -61,7 +64,6 @@ def delete_contract(
 ):
     return contract_service.delete_contract(number)
 
-
 @SubscriberContractAPIRouter.get(
     "/search",
     response_model=ContractDtoWithPagination,
@@ -80,7 +82,6 @@ async def get_contract_by_submitted_params(
         offset,
         limit
     )
-
 
 # This endpoint will receive a list of contract_number and fetch information about contact and contracts
 @SubscriberContractAPIRouter.get(

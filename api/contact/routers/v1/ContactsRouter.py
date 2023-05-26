@@ -1,24 +1,37 @@
 from typing import List
-
 from fastapi import APIRouter, Depends, status
-
-from api.contact.schemas.pydantic.ContactsSchema import ContactOutputDto, ContactsInputDto, ContactDtoWithPagination, \
-    SearchByParams, SearchAllContact, ContactsInputUpdateDto
-from api.contact.services.ContactsService import ContactsService
-from api.subscription.schemas.SubscriberContractSchema import ContractDto, InvoiceDetails, ContractInvoiceDetails, \
-    ContractInvoiceParams, ContactContracts
+from api.configs.Environment import get_environment_variables
 from api.subscription.services.SubscriberContractService import SubscriberContactService
-
-ContactsRouter = APIRouter(
-    prefix="/v1/customers", tags=["customer"]
+from api.contact.schemas.pydantic.ContactsSchema import (
+    SearchByParams,
+    ContactOutputDto, 
+    ContactsInputDto,
+    SearchAllContact, 
+    ContactsInputUpdateDto,
+    ContactDtoWithPagination
+)
+from api.contact.services.ContactsService import ContactsService
+from api.subscription.schemas.SubscriberContractSchema import (
+    ContractDto,
+    InvoiceDetails,
+    ContactContracts,
+    ContractInvoiceParams,
+    ContractInvoiceDetails
 )
 
+env = get_environment_variables()
+router_path = env.api_routers_prefix + env.api_version
+
+ContactsRouter = APIRouter(
+    prefix=router_path + "/customers",
+    tags=["Customer"],
+)
 
 @ContactsRouter.post(
     "/",
     response_model=List[ContactOutputDto],
-    summary="create user",
-    description="use this endpoint to create a new user"
+    summary="create contact",
+    description="use this endpoint to create a new contact"
 )
 def create_contact(
         contact: List[ContactsInputDto],

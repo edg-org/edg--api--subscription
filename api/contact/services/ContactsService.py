@@ -1,36 +1,44 @@
+import re
 import json
 import logging
-import re
-from datetime import date, datetime
 from typing import List
-
 from fastapi import Depends
 from sqlalchemy import String
-
-from api.exceptions import RepeatingIdentityPid, PhoneNumberExist, EmailExist, IdentityPidExist, IdentityPidNotFound, \
-    ContactNotFound, RepeatingEmail, RepeatingPhoneNumber, SearchParamError, ContactIsDisable
+from datetime import date, datetime
 from api.contact.models.ContactsModel import Contacts
 from api.contact.repositories.ContactsRepository import ContactsRepository
-from api.contact.schemas.pydantic.ContactsSchema import ContactsInputDto, ContactOutputDto, ContactDtoWithPagination, \
-    SearchByParams, SearchAllContact, ContactsInputUpdateDto
+from api.exceptions import (
+    EmailExist, 
+    RepeatingEmail,
+    ContactIsDisable
+    ContactNotFound,
+    SearchParamError,
+    PhoneNumberExist, 
+    IdentityPidExist, 
+    IdentityPidNotFound,
+    RepeatingPhoneNumber,
+    RepeatingIdentityPid,
+)
+from api.contact.schemas.pydantic.ContactsSchema import (
+    SearchByParams,
+    SearchAllContact,
+    ContactOutputDto,
+    ContactsInputDto,
+    ContactsInputUpdateDto,
+    ContactDtoWithPagination
+)
 from api.contact.services.GuidGenerator import GuidGenerator
-
 
 class ContactsService:
     contacts_repository: ContactsRepository
-
     def __init__(self, contacts_repository: ContactsRepository = Depends()) -> None:
         self.contacts_repository = contacts_repository
 
     def create_contact(self, contact_body: List[ContactsInputDto]) -> List[ContactOutputDto]:
         # Conversations notre object en json
-
         # Transform contract_schema to a list
-
         contact_body = [c.dict() for c in contact_body]
-
         contact_body = json.loads(json.dumps(contact_body, default=str))
-
         # Check if there are repeating identity pid, email or phone number, if true, then the len of identity_pid
         # will be different to the len of contact_body
         check_repeating = set()
@@ -135,16 +143,17 @@ class ContactsService:
             contact
         )
 
-    def buildContactOutputDtoWithPagination(self, contacts: List[ContactOutputDto], offset: int, limit: int,
-                                            type_contact: SearchAllContact):
-        count: int = self.contacts_repository.count_contact(type_contact)
-        total: int = len(contacts)
+    def buildContactOutputDtoWithPagination(
+        self, contacts: List[ContactOutputDto], 
+        offset: int, 
+        limit: int,
+        type_contact: SearchAllContact
+    ):
         offset: int
         limit: int
-
         return ContactDtoWithPagination(
-            count=count,
-            total=total,
+            count=self.contacts_repository.count_contact(type_contact),
+            total=len(contacts),
             offset=offset,
             limit=limit,
             data=contacts
@@ -181,8 +190,12 @@ class ContactsService:
                                 type_contact: SearchAllContact) -> ContactDtoWithPagination:
         contacts: List[Contacts] = self.contacts_repository.get_contacts_for_client(offset, limit, type_contact)
         if len(contacts) != 0:
-            return self.buildContactOutputDtoWithPagination([self.buildContractOutputDto(c) for c in contacts], offset,
-                                                            limit, type_contact)
+            return self.buildContactOutputDtoWithPagination(
+                [self.buildContractOutputDto(c) for c in contacts],
+                offset,
+                limit,
+                type_contact
+            )
         else:
             raise ContactNotFound
 
@@ -223,11 +236,9 @@ class ContactsService:
 
     def phoneNumberFormat(self, phoneNumber: str) -> String:
         if phoneNumber.startswith("+224") and not re.compile("^\+224-\d{3}-\d{2}-\d{2}-\d{2}$").match(phoneNumber):
-            phoneNumber = phoneNumber[:4] + "-" + phoneNumber[4:7] + "-" + phoneNumber[7:9] + "-" + phoneNumber[9:11] \
-                          + "-" + phoneNumber[11:13]
+            phoneNumber = phoneNumber[:4] + "-" + phoneNumber[4:7] + "-" + phoneNumber[7:9] + "-" + phoneNumber[9:11] + "-" + phoneNumber[11:13]
         if not phoneNumber.startswith("+224") and not re.compile("^\+224-\d{3}-\d{2}-\d{2}-\d{2}$").match(phoneNumber):
-            phoneNumber = "+224-" + phoneNumber[:3] + "-" + phoneNumber[3:5] + "-" + phoneNumber[5:7] \
-                          + "-" + phoneNumber[7:9]
+            phoneNumber = "+224-" + phoneNumber[:3] + "-" + phoneNumber[3:5] + "-" + phoneNumber[5:7] + "-" + phoneNumber[7:9]
 
         return phoneNumber
 
