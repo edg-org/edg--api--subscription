@@ -2,10 +2,10 @@ import json
 from unittest import TestCase
 from unittest.mock import create_autospec, Mock, patch
 
-from api.contact.repositories.ContactsRepository import ContactsRepository
-from api.contact.services.ContactsService import ContactsService
-from api.subscription.repositories.SubscriberContractRepository import SubscriberContractRepository
-from api.subscription.services.SubscriberContractService import SubscriberContactService
+from api.subscriber.repositories.ContactsRepository import ContactsRepository
+from api.subscriber.services.ContactsService import ContactsService
+from api.subscription.repositories.ContractRepository import ContractRepository
+from api.subscription.services.ContractService import ContractService
 
 
 def loadJson():
@@ -15,9 +15,9 @@ def loadJson():
     return a
 
 
-class SubscriberContractService(TestCase):
-    contract_repository: SubscriberContractRepository
-    contract_service: SubscriberContactService
+class ContractService(TestCase):
+    contract_repository: ContractRepository
+    contract_service: ContractService
     contacts_service: ContactsService
     contacts_repository: ContactsRepository
 
@@ -25,12 +25,12 @@ class SubscriberContractService(TestCase):
         super().setUp()
 
         self.contract_repository = create_autospec(
-            SubscriberContractRepository
+            ContractRepository
         )
         self.contacts_repository = create_autospec(
             ContactsRepository
         )
-        self.contract_service = SubscriberContactService(
+        self.contract_service = ContractService(
             self.contract_repository
         )
         self.contacts_service = ContactsService(
@@ -39,20 +39,20 @@ class SubscriberContractService(TestCase):
         self.contract_service.check_save_business_logic = Mock(return_value=None)
         self.contract_repository.get_contract_by_delivery_point_on_number = Mock(return_value=None)
 
-    @patch("api.subscription.schemas.SubscriberContractSchema.SubscriberContractSchema", autospec=True)
-    def test_create_contract(self, SubscriberContractSchema):
+    @patch("api.subscription.schemas.ContractSchema.ContractSchema", autospec=True)
+    def test_create_contract(self, ContractSchema):
         self.contract_repository.create_contract = Mock(return_value=None)
         self.contract_service.buildContractDto = Mock(return_value=None)
-        contract_schema = SubscriberContractSchema()
+        contract_schema = ContractSchema()
         self.contract_service.create_contract = Mock(return_value=None)
         self.contract_service.create_contract(contract_schema)
         self.contract_service.create_contract.assert_called_once()
         self.contract_repository.create_contract(contract_schema)
         self.contract_repository.create_contract.assert_called_once_with(contract_schema)
 
-    @patch("api.subscription.schemas.SubscriberContractSchema.SubscriberContractSchema", autospec=True)
-    def test_update_contract(self, SubscriberContractSchema):
-        contract_schema = SubscriberContractSchema()
+    @patch("api.subscription.schemas.ContractSchema.ContractSchema", autospec=True)
+    def test_update_contract(self, ContractSchema):
+        contract_schema = ContractSchema()
         self.contract_repository.get_contract_by_contract_uid_for_client = Mock(return_value=None)
         self.contacts_service.get_contact_by_id_for_client = Mock(
             return_value=
@@ -92,9 +92,9 @@ class SubscriberContractService(TestCase):
         self.contract_repository.update_contract(contract_schema)
         self.contract_repository.update_contract.assert_called_once_with(contract_schema)
 
-    @patch("api.contact.models.SubscriberContractModel.SubscriberContract", autospec=True)
-    def test_delete_contract(self, SubscriberContract):
-        contract = SubscriberContract()
+    @patch("api.subscription.models.ContractModel.Contract", autospec=True)
+    def test_delete_contract(self, Contract):
+        contract = Contract()
         self.contract_service.delete_contract = Mock(return_value=None)
         self.contract_service.delete_contract(contract)
         self.contract_service.delete_contract.assert_called_once()

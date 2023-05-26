@@ -1,9 +1,10 @@
-
 from os import getenv
 from dotenv import load_dotenv
 from functools import lru_cache
-from pydantic import BaseSettings    
-    
+from pydantic import BaseSettings
+
+load_dotenv()
+
 class __EnvironmentSettings(BaseSettings):
     app_name: str = getenv("APP_NAME")
     app_desc: str = getenv("APP_DESC")
@@ -19,9 +20,10 @@ class __EnvironmentSettings(BaseSettings):
     domaine_name: str = getenv("DOMAINE_NAME")
 
     class Config:
-        env_file = get_env_filename()
+        runtime_env = getenv("ENV")
+        env_file = (f".env.{runtime_env}" if runtime_env else ".env")
         env_file_encoding = "utf-8"
 
 @lru_cache
-def get_environment_variables():
+def get_env_var():
     return __EnvironmentSettings()

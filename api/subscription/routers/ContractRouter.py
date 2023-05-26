@@ -1,26 +1,27 @@
 from typing import List
+from api.configs.Environment import get_env_var
 from fastapi import APIRouter, Depends, status, Query
 from api.subscription.utilis.JWTBearer import JWTBearer
-from api.subscription.services.SubscriberContractService import SubscriberContactService
-from api.subscription.schemas.SubscriberContractSchema import (
+from api.subscription.services.ContractService import ContractService
+from api.subscription.schemas.ContractSchema import (
     ContractDto,
     ContractDtoQueryParams,
-    SubscriberContractSchema, 
+    ContractSchema, 
     ContractDtoWithPagination,
     ContactDtoForBillingService, 
     ContactWithContractAndPricing,
-    SubscriberContractInfoInputUpdate
+    ContractInfoInputUpdate
 )
 
-env = get_environment_variables()
+env = get_env_var()
 router_path = env.api_routers_prefix + env.api_version
 
-SubscriberContractAPIRouter = APIRouter(
+contractRouter = APIRouter(
     prefix=router_path + "/subscriptions",
     tags=["Subscription"],
 )
 
-@SubscriberContractAPIRouter.post(
+@contractRouter.post(
     "/",
     response_model=List[ContractDto],
     status_code=status.HTTP_201_CREATED,
@@ -29,13 +30,13 @@ SubscriberContractAPIRouter = APIRouter(
 
 )
 def create_contrat(
-        contract_schema: List[SubscriberContractSchema],
-        contract_service: SubscriberContactService = Depends()
+        contract_schema: List[ContractSchema],
+        contract_service: ContractService = Depends()
 ):
     return contract_service.create_contract(contract_schema)
 
 
-@SubscriberContractAPIRouter.put(
+@contractRouter.put(
     path="/{number}",
     response_model=ContractDto,
     status_code=status.HTTP_200_OK,
@@ -44,13 +45,13 @@ def create_contrat(
 )
 def update_contract(
         number: str,
-        contract_schema: SubscriberContractInfoInputUpdate,
-        contract_service: SubscriberContactService = Depends()
+        contract_schema: ContractInfoInputUpdate,
+        contract_service: ContractService = Depends()
 ):
     return contract_service.update_contract(number, contract_schema)
 
 
-@SubscriberContractAPIRouter.delete(
+@contractRouter.delete(
     path="/{number}",
     response_model=ContractDto,
     status_code=status.HTTP_200_OK,
@@ -60,11 +61,11 @@ def update_contract(
 )
 def delete_contract(
         number: str,
-        contract_service: SubscriberContactService = Depends()
+        contract_service: ContractService = Depends()
 ):
     return contract_service.delete_contract(number)
 
-@SubscriberContractAPIRouter.get(
+@contractRouter.get(
     "/search",
     response_model=ContractDtoWithPagination,
     status_code=status.HTTP_200_OK,
@@ -75,7 +76,7 @@ async def get_contract_by_submitted_params(
         offset: int = 0,
         limit: int = 10,
         params: ContractDtoQueryParams = Depends(),
-        contract_service: SubscriberContactService = Depends()
+        contract_service: ContractService = Depends()
 ):
     return contract_service.get_contract_by_submitted_params(
         params,
@@ -84,7 +85,7 @@ async def get_contract_by_submitted_params(
     )
 
 # This endpoint will receive a list of contract_number and fetch information about contact and contracts
-@SubscriberContractAPIRouter.get(
+@contractRouter.get(
     path="/numbers/",
     status_code=status.HTTP_200_OK,
     response_model=ContactWithContractAndPricing,
@@ -93,6 +94,6 @@ async def get_contract_by_submitted_params(
 )
 async def get_contract_and_contact_by_contract_uid(
         number: List[str] = Query(None),
-        contract_service: SubscriberContactService = Depends()
+        contract_service: ContractService = Depends()
 ):
     return contract_service.get_contract_and_contact_by_contract_uid(number)

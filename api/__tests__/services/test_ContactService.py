@@ -4,10 +4,10 @@ from typing import List
 from unittest import TestCase
 from unittest.mock import create_autospec, patch, Mock
 
-from api.contact.models.ContactsModel import Contacts
-from api.contact.repositories import ContactsRepository
-from api.contact.schemas.pydantic.ContactsSchema import ContactInfos
-from api.contact.services.ContactsService import ContactsService
+from api.subscriber.models.ContactsModel import Contacts
+from api.subscriber.repositories import ContactsRepository
+from api.subscriber.schemas.ContactsSchema import ContactInfos
+from api.subscriber.services.ContactsService import ContactsService
 
 
 class TestContactService(TestCase):
@@ -32,8 +32,8 @@ class TestContactService(TestCase):
         self.contact_repository.get_contact_by_type_for_client = Mock()
         self.contact_repository.get_contact_by_type_for_admin = Mock()
 
-    @patch("api.contact.schemas.pydantic.ContactsSchema.ContactInfos", autospec=True)
-    @patch("api.contact.schemas.pydantic.ContactsSchema.ContactsInputDto", autospec=True)
+    @patch("api.subscriber.schemas.ContactsSchema.ContactInfos", autospec=True)
+    @patch("api.subscriber.schemas.ContactsSchema.ContactsInputDto", autospec=True)
     def test_create_contact(self, ContactInfos, ContactsInputDto):
         contactInfos: ContactInfos() = self.loadJson()
 
@@ -60,7 +60,7 @@ class TestContactService(TestCase):
         return json.load(f)
 
     @patch(
-        "api.contact.schemas.pydantic.ContactsSchema.ContactsInputDto",
+        "api.subscriber.schemas.ContactsSchema.ContactsInputDto",
         autospec=True,
     )
     def test_update_contact(self, ContactsInputDto):
@@ -85,7 +85,7 @@ class TestContactService(TestCase):
         c = self.contact_service.get_contact_by_email_for_client("user@example.com")
         self.contact_repository.get_contact_by_email_for_client.assert_called_once()
 
-    @patch("api.contact.schemas.pydantic.ContactsSchema.ContactOutputDto", autospec=True)
+    @patch("api.subscriber.schemas.ContactsSchema.ContactOutputDto", autospec=True)
     def test_get_contact_by_phone_for_client(self, ContactOutputDto):
         self.contact_service.buildContractOutputDto = Mock(return_value=None)
         self.contact_service.get_contact_by_phone_for_client("+224-610-18-59-36")

@@ -1,17 +1,11 @@
-from sqlalchemy import create_engine
-from sqlalchemy.orm import scoped_session, sessionmaker
-
-from api.configs.Environment import get_environment_variables
-
-
 from functools import lru_cache
 from sqlalchemy import create_engine
+from api.configs.Environment import get_env_var
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import scoped_session, sessionmaker
-from api.configs.Environment import get_environment_variables
 
 # Runtime Environment Configuration
-env = get_environment_variables()
+env = get_env_var()
 
 Engine = create_engine(
     "{0}://{1}:{2}@{3}:{4}/{5}".format(

@@ -5,8 +5,8 @@ from sqlalchemy import select, func
 from sqlalchemy.orm import Session
 
 from api.configs.Database import get_db_connection
-from api.contact.models.ContactsModel import Contacts
-from api.contact.schemas.pydantic.ContactsSchema import SearchByParams, SearchAllContact
+from api.subscriber.models.ContactsModel import Contacts
+from api.subscriber.schemas.ContactsSchema import SearchByParams, SearchAllContact
 
 
 class ContactsRepository:

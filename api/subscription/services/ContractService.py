@@ -6,51 +6,51 @@ from typing import List, Sequence, cast
 from fastapi import Depends
 from fastapi.encoders import jsonable_encoder
 
-from api.contact.models.SubscriberContractModel import SubscriberContract
-from api.contact.schemas.pydantic.ContactsSchema import ContactOutputDto
+from api.subscription.models.ContractModel import Contract
+from api.subscriber.schemas.ContactsSchema import ContactOutputDto
 
-from api.contact.services.ContactsService import ContactsService
+from api.subscriber.services.ContactsService import ContactsService
 from api.subscription.exceptions import ContractNotFound, DeleteContractException, ContactNotFound, \
     EditContactWhileNotOwner, ContractDisabled, ContractExist, ContractStatusError, RepeatingDeliveryPoint, \
     ContractLevelError, StatusErrorWhenCurrentStatusIsEqualInitial, \
     StatusErrorWhenCurrentStatusIsEqualEdited, ContractIsAlreadyActivated, InvalidMetricNumberOrConsumptionEstimation, \
     MetricNumberAndConsumptionEstimationCannotBeProvidedAtTheSameTime, ContactOrContractNotFound
 
-from api.subscription.repositories.SubscriberContractRepository import SubscriberContractRepository
-from api.subscription.schemas.SubscriberContractSchema import \
-    (SubscriberContractSchema,
+from api.subscription.repositories.ContractRepository import ContractRepository
+from api.subscription.schemas.ContractSchema import \
+    (ContractSchema,
      ContractDto,
      ContractDtoWithPagination,
-     SubscriberContractInfoInputUpdate,
+     ContractInfoInputUpdate,
      ContractDetails,
      InvoiceDetails,
      ContractInvoiceDetails,
      ContactContracts,
      ContractInvoiceParams,
      Invoice,
-     SubscriberContractInfoOutput,
+     ContractInfoOutput,
      ContractInvoiceForBillingService,
      ContactDtoForBillingService,
      ContactWithContractAndPricing,
-     ContractDtoQueryParams, PricingDto, Pricing, SubscriberContractInfoDto
+     ContractDtoQueryParams, PricingDto, Pricing, ContractInfoDto
      )
 from api.subscription.services.GuidGenerator import GuidGenerator
 from api.subscription.services.RequestMaster import RequestMaster
 from api.subscription.utilis.Status import ContractStatus
 
 
-class SubscriberContactService:
-    subscriber_contract_repository: SubscriberContractRepository
+class ContractService:
+    contract_repository: ContractRepository
     contact_service: ContactsService
 
     def __init__(self,
-                 subscriber_contract_repository: SubscriberContractRepository = Depends(),
+                 contract_repository: ContractRepository = Depends(),
                  contact_service: ContactsService = Depends()
                  ) -> None:
-        self.subscriber_contract_repository = subscriber_contract_repository
+        self.contract_repository = contract_repository
         self.contact_service = contact_service
 
-    def buildContractDto(self, contract: SubscriberContract) -> ContractDto:
+    def buildContractDto(self, contract: Contract) -> ContractDto:
         return ContractDto(
             id=contract.id,
             infos=contract.infos,
@@ -76,11 +76,11 @@ class SubscriberContactService:
             data=contracts
         )
 
-    def create_contract(self, contract_schema: List[SubscriberContractSchema]) -> List[ContractDto]:
+    def create_contract(self, contract_schema: List[ContractSchema]) -> List[ContractDto]:
         """
         This service has a purpose to create a new contract
         :param contract_schema: the data model to fill
-        :return: return a created object from db SubscriberContract
+        :return: return a created object from db Contract
         """
         # Transform contract_schema to a list
         contract_schema = json.dumps([contract.dict() for contract in contract_schema])
@@ -100,16 +100,16 @@ class SubscriberContactService:
                 len(delivery_point_on_metric_number) != len(contract_schema)):
             raise RepeatingDeliveryPoint
 
-        contracts: List[SubscriberContract] = [self.check_save_business_logic(c) for c in contract_schema]
-        contracts = self.subscriber_contract_repository.create_contract(contracts)
+        contracts: List[Contract] = [self.check_save_business_logic(c) for c in contract_schema]
+        contracts = self.contract_repository.create_contract(contracts)
         return [self.buildContractDto(c) for c in contracts]
 
-    def check_save_business_logic(self, contract_schema: SubscriberContractSchema) -> SubscriberContract:
+    def check_save_business_logic(self, contract_schema: ContractSchema) -> Contract:
         """
         This service verify if the contact and contract is already exist and the contract is not assign to any
         delivery point
         :param contract_schema:
-        :return: SubscriberContract
+        :return: Contract
         """
         # contract_schema.infos = json.loads(contract_schema.infos.json())
         # logging.warning(f"type of contract schema %s", type(contract_schema))
@@ -117,7 +117,7 @@ class SubscriberContactService:
             contract_schema['customer_number']
         )
 
-        contract_exist = self.subscriber_contract_repository \
+        contract_exist = self.contract_repository \
             .get_contract_by_delivery_point_on_number(
             contract_schema['delivery_point']['number']
         )
@@ -125,7 +125,7 @@ class SubscriberContactService:
         if contract_exist is not None:
             raise ContractExist(" number " + contract_exist.infos['delivery_point']['number'])
 
-        contract_exist = self.subscriber_contract_repository.get_contract_by_delivery_point_on_metric_number(
+        contract_exist = self.contract_repository.get_contract_by_delivery_point_on_metric_number(
             contract_schema['delivery_point']['metric_number']
         )
 
@@ -143,7 +143,7 @@ class SubscriberContactService:
                                                       contract_schema['subscription_type']['code']))
         contact = jsonable_encoder(contact)
 
-        return SubscriberContract(
+        return Contract(
             infos=contract_schema,
             customer_id=contact['id'],
             customer_number=contract_schema['customer_number'],
@@ -175,7 +175,7 @@ class SubscriberContactService:
                 }]
             )
 
-    def update_contract(self, contract_number: str, contract_schema: SubscriberContractInfoInputUpdate) -> ContractDto:
+    def update_contract(self, contract_number: str, contract_schema: ContractInfoInputUpdate) -> ContractDto:
         """
         This service update an existing contract from the database
         :param contract_number: contract unique number
@@ -188,7 +188,7 @@ class SubscriberContactService:
         if contract_schema['status'] == contract_schema['previous_status']:
             raise ContractStatusError
 
-        contract_exist: SubscriberContract = self.subscriber_contract_repository \
+        contract_exist: Contract = self.contract_repository \
             .get_contract_by_contract_uid(contract_number)
         # logging.error("update find %s", contract_exist.normalize())
         # if the contract does not exist, so we throw an exception
@@ -201,7 +201,7 @@ class SubscriberContactService:
             raise ContractDisabled
 
         # check if delivery point on metric_number exist, if true throw error
-        contract_exist_by_delivery_point_on_metric_number = self.subscriber_contract_repository. \
+        contract_exist_by_delivery_point_on_metric_number = self.contract_repository. \
             get_contract_by_delivery_point_on_metric_number(contract_schema['delivery_point']['metric_number'])
         # logging.error("metric number %s", contract_exist_by_delivery_point_on_metric_number)
         if (contract_exist_by_delivery_point_on_metric_number is not None
@@ -234,8 +234,8 @@ class SubscriberContactService:
         contract_schema['power_of_energy'] = contract_exist.infos['power_of_energy']
         contract_schema['agency'] = contract_exist.infos['agency']
 
-        contract: SubscriberContract = self.subscriber_contract_repository.update_contract(
-            SubscriberContract(
+        contract: Contract = self.contract_repository.update_contract(
+            Contract(
                 id=contract_exist.id,
                 infos=contract_schema,
                 customer_id=contract_exist.customer_id,
@@ -257,7 +257,7 @@ class SubscriberContactService:
         :param contract_number:
         :return:
         """
-        contract: SubscriberContract = self.subscriber_contract_repository.get_contract_by_contract_uid_for_update(
+        contract: Contract = self.contract_repository.get_contract_by_contract_uid_for_update(
             contract_number
         )
         if contract.deleted_at is not None:
@@ -274,11 +274,11 @@ class SubscriberContactService:
 
         contract.infos['previous_status'] = contract.infos['status']
         contract.infos['status'] = ContractStatus.ACTIVE
-        contract = self.subscriber_contract_repository.update_contract(contract)
+        contract = self.contract_repository.update_contract(contract)
 
         return self.buildContractDto(contract)
 
-    def contract_status_logic(self, contract: SubscriberContract | None, status: str) -> SubscriberContract:
+    def contract_status_logic(self, contract: Contract | None, status: str) -> Contract:
         # check contract status
         # if the status is ContractStatus.INITIAL, so it can't change to ContractStatus.CREATED
         # or ContractStatus.INCOMPLETE
@@ -305,7 +305,7 @@ class SubscriberContactService:
         :param contract_number:
         :return: None
         """
-        contract: SubscriberContract = self.subscriber_contract_repository.get_contract_by_contract_uid(
+        contract: Contract = self.contract_repository.get_contract_by_contract_uid(
             contract_number
         )
         if contract is None:
@@ -315,7 +315,7 @@ class SubscriberContactService:
         contract.closing_date = datetime.now().replace(microsecond=0)
         contract.infos = jsonable_encoder(contract.infos)
         contract.infos['status'] = ContractStatus.CLOSED
-        contract: SubscriberContract = self.subscriber_contract_repository.update_contract(contract)
+        contract: Contract = self.contract_repository.update_contract(contract)
         return self.buildContractDto(contract)
 
     def get_contract_by_customer_id_for_client(self, customer_id: int, offset: int, limit: int) \
@@ -325,9 +325,9 @@ class SubscriberContactService:
         :param customer_id:
         :param offset: start page
         :param limit: end page
-        :return: throw an error the contract does not exist or return SubscriberContract
+        :return: throw an error the contract does not exist or return Contract
          """
-        contract: List[SubscriberContract] = self.subscriber_contract_repository \
+        contract: List[Contract] = self.contract_repository \
             .get_contract_by_customer_id_for_client(customer_id, offset, limit)
 
         if len(contract) == 0:
@@ -339,9 +339,9 @@ class SubscriberContactService:
         """
         This service is used to fill activated contract by a specific contract unique number
         :param contract_number: contract unique number
-        :return: SubscriberContract or throw an HTTPException error
+        :return: Contract or throw an HTTPException error
         """
-        contract: SubscriberContract = self.subscriber_contract_repository \
+        contract: Contract = self.contract_repository \
             .get_contract_by_contract_uid(contract_number)
         if contract is None:
             raise ContractNotFound
@@ -359,13 +359,13 @@ class SubscriberContactService:
         """
         # logging.warning("excluded id", params.dict(exclude_none=True).)
 
-        contracts: Sequence[List[SubscriberContract]] = self.subscriber_contract_repository. \
+        contracts: Sequence[List[Contract]] = self.contract_repository. \
             get_contract_by_submitted_params(params, offset, limit)
         contracts: List[ContractDto] = [self.buildContractDto(c) for c in contracts]
         if len(contracts) == 0:
             raise ContractNotFound
         return self.buildContractDtoWithPagination(contracts, offset, limit,
-                                                   self.subscriber_contract_repository.count_contract(params))
+                                                   self.contract_repository.count_contract(params))
 
     def get_contract_by_contact_number(self, contact_number: str, offset: int, limit: int) -> ContractDtoWithPagination:
         """
@@ -375,12 +375,12 @@ class SubscriberContactService:
         :param limit:
         :return: ContractDtoWithPagination
         """
-        contracts = self.subscriber_contract_repository.get_contract_by_contact_number(contact_number)
+        contracts = self.contract_repository.get_contract_by_contact_number(contact_number)
         if len(contracts) == 0:
             raise ContractNotFound
         contracts = [self.buildContractDto(c) for c in contracts]
         return self.buildContractDtoWithPagination(
-            contracts, offset, limit, self.subscriber_contract_repository.
+            contracts, offset, limit, self.contract_repository.
             count_contract_by_contact_number(contact_number)
         )
 
@@ -390,13 +390,13 @@ class SubscriberContactService:
         :param contact_number:
         :return:  List[ContractDto] or empty List
         """
-        contracts = self.subscriber_contract_repository.get_contract_by_contact_number(contact_number)
+        contracts = self.contract_repository.get_contract_by_contact_number(contact_number)
         if len(contracts) == 0:
             raise ContractNotFound
         return [self.buildContractDto(c) for c in contracts]
 
     def get_contract_details(self, number, params: ContractInvoiceParams) -> List[ContractInvoiceDetails]:
-        contracts: Sequence[List[SubscriberContract]] = self.subscriber_contract_repository. \
+        contracts: Sequence[List[Contract]] = self.contract_repository. \
             get_contact_contracts(number, params)
         if len(contracts) == 0:
             raise ContactOrContractNotFound
@@ -476,9 +476,9 @@ class SubscriberContactService:
         )
 
     def get_contract_and_contact_by_contract_uid(self, number: List[str]) -> ContactWithContractAndPricing:
-        contractsDto: List[SubscriberContract] = []
+        contractsDto: List[Contract] = []
         for contract_number in number:
-            contract = self.subscriber_contract_repository.get_contract_by_contract_uid(contract_number)
+            contract = self.contract_repository.get_contract_by_contract_uid(contract_number)
             if contract is not None:
                 if not contract.infos['is_blocked_pricing']:
                     try:

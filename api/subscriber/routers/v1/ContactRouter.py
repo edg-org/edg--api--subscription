@@ -1,8 +1,8 @@
 from typing import List
 from fastapi import APIRouter, Depends, status
-from api.configs.Environment import get_environment_variables
-from api.subscription.services.SubscriberContractService import SubscriberContactService
-from api.contact.schemas.pydantic.ContactsSchema import (
+from api.configs.Environment import get_env_var
+from api.subscription.services.ContractService import ContractService
+from api.subscriber.schemas.ContactsSchema import (
     SearchByParams,
     ContactOutputDto, 
     ContactsInputDto,
@@ -10,8 +10,8 @@ from api.contact.schemas.pydantic.ContactsSchema import (
     ContactsInputUpdateDto,
     ContactDtoWithPagination
 )
-from api.contact.services.ContactsService import ContactsService
-from api.subscription.schemas.SubscriberContractSchema import (
+from api.subscriber.services.ContactsService import ContactsService
+from api.subscription.schemas.ContractSchema import (
     ContractDto,
     InvoiceDetails,
     ContactContracts,
@@ -19,15 +19,15 @@ from api.subscription.schemas.SubscriberContractSchema import (
     ContractInvoiceDetails
 )
 
-env = get_environment_variables()
+env = get_env_var()
 router_path = env.api_routers_prefix + env.api_version
 
-ContactsRouter = APIRouter(
+contactRouter = APIRouter(
     prefix=router_path + "/customers",
     tags=["Customer"],
 )
 
-@ContactsRouter.post(
+@contactRouter.post(
     "/",
     response_model=List[ContactOutputDto],
     summary="create contact",
@@ -40,7 +40,7 @@ def create_contact(
     return contact_service.create_contact(contact)
 
 
-@ContactsRouter.put(
+@contactRouter.put(
     "/{number}",
     response_model=ContactOutputDto,
     summary="update user by customer number",
@@ -54,7 +54,7 @@ def update_contact(
     return contact_service.update_contact(number, contact)
 
 
-@ContactsRouter.delete(
+@contactRouter.delete(
     "/{number}",
     summary="delete user by customer number",
     description="This will display info only for active account"
@@ -66,7 +66,7 @@ def delete_contact(
     contact_service.delete_contact(number)
 
 
-@ContactsRouter.get(
+@contactRouter.get(
     "/search",
     response_model=ContactOutputDto,
     summary="Search customer by params",
@@ -80,7 +80,7 @@ async def search_contact_by_params(
     return contact_service.search_contact_by_param(query_params)
 
 
-@ContactsRouter.get(
+@contactRouter.get(
     "",
     response_model=ContactDtoWithPagination,
     summary="search customer by given params",
@@ -95,7 +95,7 @@ def get_contacts_for_client(
     return contact_service.get_contacts_for_client(offset, limit, type_contact)
 
 
-@ContactsRouter.get(
+@contactRouter.get(
     path="/{number}/subscriptions",
     response_model=List[ContractDto],
     status_code=status.HTTP_200_OK,
@@ -104,12 +104,12 @@ def get_contacts_for_client(
 )
 async def get_billing(
         number: str,
-        contract_service: SubscriberContactService = Depends()
+        contract_service: ContractService = Depends()
 ):
     return contract_service.get_contracts_by_contact_number(number)
 
 
-@ContactsRouter.get(
+@contactRouter.get(
     "/{number}/details",
     response_model=List[ContractInvoiceDetails],
     status_code=status.HTTP_200_OK,
@@ -119,6 +119,6 @@ async def get_billing(
 async def get_contract_details(
         number: str,
         params: ContractInvoiceParams = Depends(),
-        contract_service: SubscriberContactService = Depends()
+        contract_service: ContractService = Depends()
 ):
     return contract_service.get_contract_details(number, params)

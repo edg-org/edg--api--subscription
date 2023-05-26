@@ -5,26 +5,26 @@ from unittest.mock import create_autospec, patch
 
 from sqlalchemy.orm import Session
 
-from api.subscription.repositories.SubscriberContractRepository import SubscriberContractRepository
+from api.subscription.repositories.ContractRepository import ContractRepository
 from api.subscription.services.GuidGenerator import GuidGenerator
 
 
 class TestSubscriberRepository(TestCase):
     session: Session
-    contract_repository: SubscriberContractRepository
+    contract_repository: ContractRepository
 
     def setUp(self):
         super().setUp()
         self.session = create_autospec(Session)
-        self.contract_repository = SubscriberContractRepository(
+        self.contract_repository = ContractRepository(
             self.session
         )
 
-    @patch("api.contact.models.SubscriberContractModel.SubscriberContract", autospec=True)
-    def test_create_contract(self, SubscriberContract):
+    @patch("api.subscription.models.ContractModel.Contract", autospec=True)
+    def test_create_contract(self, Contract):
         contract_schema = self.loadJson()
         logging.warning(f"mess %s ", type(contract_schema))
-        contract = SubscriberContract(
+        contract = Contract(
             infos=contract_schema[0]['infos'],
             customer_id=contract_schema[0]['customer_id'],
             contract_uid=GuidGenerator.contractUID("O0365412"),
@@ -33,10 +33,10 @@ class TestSubscriberRepository(TestCase):
 
         self.session.add_all.assert_called_once_with(contract)
 
-    @patch("api.contact.models.SubscriberContractModel.SubscriberContract", autospec=True)
-    def test_update_contract(self, SubscriberContract):
+    @patch("api.subscription.models.ContractModel.Contract", autospec=True)
+    def test_update_contract(self, Contract):
         contract_schema = self.loadJson()
-        contract = SubscriberContract(
+        contract = Contract(
             infos=contract_schema[0]['infos'],
             customer_id=contract_schema[0]['customer_id'],
             contract_uid=GuidGenerator.contractUID("O0365412"),
@@ -46,10 +46,10 @@ class TestSubscriberRepository(TestCase):
 
         self.session.merge.assert_called_once_with(contract)
 
-    @patch("api.contact.models.SubscriberContractModel.SubscriberContract", autospec=True)
-    def test_delete_contract(self, SubscriberContract):
+    @patch("api.subscription.models.ContractModel.Contract", autospec=True)
+    def test_delete_contract(self, Contract):
         contract_schema = self.loadJson()
-        contract = SubscriberContract(
+        contract = Contract(
             infos=contract_schema[0]['infos'],
             customer_id=contract_schema[0]['customer_id'],
             contract_uid=GuidGenerator.contractUID("O0365412"),

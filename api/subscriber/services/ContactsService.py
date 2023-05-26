@@ -5,12 +5,12 @@ from typing import List
 from fastapi import Depends
 from sqlalchemy import String
 from datetime import date, datetime
-from api.contact.models.ContactsModel import Contacts
-from api.contact.repositories.ContactsRepository import ContactsRepository
+from api.subscriber.models.ContactsModel import Contacts
+from api.subscriber.repositories.ContactsRepository import ContactsRepository
 from api.exceptions import (
     EmailExist, 
     RepeatingEmail,
-    ContactIsDisable
+    ContactIsDisable,
     ContactNotFound,
     SearchParamError,
     PhoneNumberExist, 
@@ -19,7 +19,7 @@ from api.exceptions import (
     RepeatingPhoneNumber,
     RepeatingIdentityPid,
 )
-from api.contact.schemas.pydantic.ContactsSchema import (
+from api.subscriber.schemas.ContactsSchema import (
     SearchByParams,
     SearchAllContact,
     ContactOutputDto,
@@ -27,7 +27,7 @@ from api.contact.schemas.pydantic.ContactsSchema import (
     ContactsInputUpdateDto,
     ContactDtoWithPagination
 )
-from api.contact.services.GuidGenerator import GuidGenerator
+from api.subscriber.services.GuidGenerator import GuidGenerator
 
 class ContactsService:
     contacts_repository: ContactsRepository

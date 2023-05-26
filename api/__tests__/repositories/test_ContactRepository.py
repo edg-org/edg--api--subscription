@@ -4,7 +4,7 @@ from unittest.mock import create_autospec, patch, Mock
 
 from sqlalchemy.orm import Session
 
-from api.contact.repositories.ContactsRepository import ContactsRepository
+from api.subscriber.repositories.ContactsRepository import ContactsRepository
 
 
 class TestContactRepository(TestCase):
@@ -18,7 +18,7 @@ class TestContactRepository(TestCase):
             self.session
         )
 
-    @patch("api.contact.models.ContactsModel.Contacts", autospec=True)
+    @patch("api.subscriber.models.ContactsModel.Contacts", autospec=True)
     def test_create_contact(self, Contacts):
         contact = Contacts(infos=self.loadJson())
 
@@ -26,7 +26,7 @@ class TestContactRepository(TestCase):
 
         self.session.add_all.assert_called_once_with(contact)
 
-    @patch("api.contact.models.ContactsModel.Contacts", autospec=True)
+    @patch("api.subscriber.models.ContactsModel.Contacts", autospec=True)
     def test_update_contact(self, Contacts):
         contact = Contacts(infos=self.loadJson())
 

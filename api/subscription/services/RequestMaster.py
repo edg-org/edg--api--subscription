@@ -6,7 +6,7 @@ from fastapi.openapi.models import Response
 from fastapi.encoders import jsonable_encoder
 
 from api.subscription.exceptions import BillingRequestException, RequestResourceError
-from api.subscription.schemas.SubscriberContractSchema import InvoiceDetails, Invoice, \
+from api.subscription.schemas.ContractSchema import InvoiceDetails, Invoice, \
     ContractInvoiceForBillingService, PricingDto
 
 

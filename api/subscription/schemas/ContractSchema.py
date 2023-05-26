@@ -1,19 +1,22 @@
-from datetime import datetime, date
 from enum import Enum
 from typing import List
-
+from datetime import datetime, date
 from pydantic import BaseModel, Field
 from pydantic.dataclasses import dataclass
-
-from api.contact.schemas.pydantic.ContactsSchema import ContactOutputDto, ContactInfos, ContactInfosOutput
-from api.contact.schemas.pydantic.SchemaBaseConfig import OmitFields, AllOptional
+from api.subscriber.schemas.ContactsSchema import (
+    ContactOutputDto,
+    ContactInfos,
+    ContactInfosOutput,
+)
+from api.configs.SchemaBase import (
+    HideFields,
+    AllOptional,
+)
 from api.subscription.constant import OpenAPIFieldDescription
-
 
 class SubscriptionLevel(BaseModel):
     name: str = Field(description=OpenAPIFieldDescription.CONTRACT_INFO_LEVEL_NAME)
     payment_mode: List[str] = Field(description=OpenAPIFieldDescription.PAYMENT_MODE_NAME)
-
 
 class Agency(BaseModel):
     name: str = Field(description=OpenAPIFieldDescription.AGENCY_NAME)
@@ -21,37 +24,30 @@ class Agency(BaseModel):
     tel: str = Field(description=OpenAPIFieldDescription.AGENCY_TEL)
     email: str = Field(description=OpenAPIFieldDescription.AGENCY_EMAIL)
 
-
 class SubscriptionType(BaseModel):
     code: int = Field(description=OpenAPIFieldDescription.SUBSCRIPTION_CODE)
     name: str = Field(description=OpenAPIFieldDescription.SUBSCRIPTION_NAME)
-
 
 class ConsumptionEstimated(BaseModel):
     value: int = Field(description=OpenAPIFieldDescription.SUBSCRIPTION_CODE)
     measurement_unit: str = Field(description=OpenAPIFieldDescription.SUBSCRIPTION_NAME)
 
-
-class DeliveryPoint(OmitFields):
+class DeliveryPoint(HideFields):
     number: str = Field(description=OpenAPIFieldDescription.DELIVERY_NUMBER)
     metric_number: str | None = Field(description=OpenAPIFieldDescription.METRIC_NUMBER)
 
-
 class DeliveryPointUpdate(DeliveryPoint):
     class Config:
-        omit_fields = {'number'}
-
+        hide_fields = {"number"}
 
 class Equipment(BaseModel):
     total: int = Field(description=OpenAPIFieldDescription.AMOUNT_EQUIPMENT)
     details: List[str] = Field(description=OpenAPIFieldDescription.EQUIPMENT_LIST)
 
-
 class HomeInfos(BaseModel):
     surface: int = Field(description=OpenAPIFieldDescription.SURFACE)
     occupier_number: int = Field(description=OpenAPIFieldDescription.OCCUPIER_NUMBER)
     equipment: Equipment = Field(description=OpenAPIFieldDescription.EQUIPMENT)
-
 
 class Slices(BaseModel):
     slice_name: str
@@ -59,12 +55,10 @@ class Slices(BaseModel):
     upper_index: int
     unit_price: int
 
-
 class Pricing(BaseModel):
     name: str = Field(description=OpenAPIFieldDescription.SLICE_NAME)
     subscription_fee: int = Field(description=OpenAPIFieldDescription.LOWER_INDEX)
     slices: List[Slices] = Field(description=OpenAPIFieldDescription.UPPER_INDEX)
-
 
 class Dunning(BaseModel):
     name: str = Field(description=OpenAPIFieldDescription.DUNNING_NAME)
@@ -72,8 +66,7 @@ class Dunning(BaseModel):
     payment_deadline: int = Field(description=OpenAPIFieldDescription.PAYMENT_DEADLINE)
     delay_penality_rate: int = Field(description=OpenAPIFieldDescription.DELAY_PENALTY_RATE)
 
-
-class SubscriberContractInfo(OmitFields):
+class ContractInfo(HideFields):
     consumption_estimated: ConsumptionEstimated | None
     subscription_type: SubscriptionType = Field(description=OpenAPIFieldDescription.CONTRACT_INFO_INPUT_SUBSCRIBER_TYPE)
     payment_deadline: int = Field(description=OpenAPIFieldDescription.PAYMENT_DEADLINE)
@@ -87,33 +80,37 @@ class SubscriberContractInfo(OmitFields):
     invoicing_frequency: int = Field(description=OpenAPIFieldDescription.INVOICING_FREQUENCY)
     agency: Agency = Field(description=OpenAPIFieldDescription.CONTRACT_INFO_INPUT_AGENCY)
     home_infos: HomeInfos = Field(description=OpenAPIFieldDescription.HomeInfos)
-    is_blocked_pricing: bool = Field(description=OpenAPIFieldDescription.IS_BLOCKED_PAYED, default=False)
+    is_blocked_pricing: bool = Field(
+        description=OpenAPIFieldDescription.IS_BLOCKED_PAYED,
+        default=False,
+    )
 
-
-class SubscriberContractInfoDto(SubscriberContractInfo):
+class ContractInfoDto(ContractInfo):
     pricing: Pricing | None = Field(description=OpenAPIFieldDescription.PRICING)
 
-
-class SubscriberContractInfoInput(SubscriberContractInfo):
+class ContractInfoInput(ContractInfo):
     delivery_point: DeliveryPoint = Field(description=OpenAPIFieldDescription.CONTRACT_INFO_INPUT_DELIVERY_POINT)
 
 
-class SubscriberContractInfoOutput(SubscriberContractInfoDto, metaclass=AllOptional):
+class ContractInfoOutput(ContractInfoDto, metaclass=AllOptional):
     delivery_point: DeliveryPoint | None
 
-
-class SubscriberContractInfoInputUpdate(SubscriberContractInfoDto):
-    delivery_point: DeliveryPointUpdate | None = Field(
-        description=OpenAPIFieldDescription.CONTRACT_INFO_INPUT_DELIVERY_POINT)
+class ContractInfoInputUpdate(ContractInfoDto):
+    delivery_point: DeliveryPointUpdate | None = Field(description=OpenAPIFieldDescription.CONTRACT_INFO_INPUT_DELIVERY_POINT)
 
     class Config:
-        omit_fields = {'pricing', 'subscription_type', 'deadline_unit_time', 'payment_deadline', 'agency',
-                       'subscribed_power', 'power_of_energy'}
+        hide_fields = {
+            "pricing",
+            "subscription_type",
+            "deadline_unit_time",
+            "payment_deadline",
+            "agency",
+            "subscribed_power",
+            "power_of_energy",
+        }
 
-
-class SubscriberContractSchema(SubscriberContractInfoInput):
+class ContractSchema(ContractInfoInput):
     customer_number: str
-
 
 class BaseContactDto(BaseModel):
     id: int
@@ -128,12 +125,10 @@ class BaseContactDto(BaseModel):
 
 
 class ContractDto(BaseContactDto, metaclass=AllOptional):
-    infos: SubscriberContractInfoOutput | None = Field(description=OpenAPIFieldDescription.CONTRACT_OUTPUT_INFO)
-
+    infos: ContractInfoOutput | None = Field(description=OpenAPIFieldDescription.CONTRACT_OUTPUT_INFO)
 
 class ContractDtoUpdate(BaseContactDto, metaclass=AllOptional):
-    infos: SubscriberContractInfoInputUpdate | None = Field(description=OpenAPIFieldDescription.CONTRACT_OUTPUT_INFO)
-
+    infos: ContractInfoInputUpdate | None = Field(description=OpenAPIFieldDescription.CONTRACT_OUTPUT_INFO)
 
 class ContractDtoWithPagination(BaseModel):
     count: int
@@ -141,7 +136,6 @@ class ContractDtoWithPagination(BaseModel):
     offset: int
     limit: int
     data: List[ContractDto]
-
 
 class CustomerStatus(Enum):
     ACTIVE = "Activé"
@@ -151,16 +145,13 @@ class CustomerStatus(Enum):
     INCOMPLETE = "Incomplet"
     WAITING_FOR_ACTIVATION = "En attente d’activation"
 
-
 class ContractDtoQueryParams(BaseModel):
     customer_number: str | None = Field(description=OpenAPIFieldDescription.CUSTOMER_ID)
     contract_number: str | None = Field(description=OpenAPIFieldDescription.CONTRACT_UID)
     status: CustomerStatus | None = Field(description=OpenAPIFieldDescription.STATUS)
 
-
 class PricingDto(Pricing, metaclass=AllOptional):
     pass
-
 
 class Invoice(BaseModel):
     invoice_number: str | None = Field(description=OpenAPIFieldDescription.INVOICE_NUMBER)
@@ -180,7 +171,6 @@ class Invoice(BaseModel):
     status: str | None = Field(description=OpenAPIFieldDescription.INVOICE_STATUS)
     type: str | None = Field(description=OpenAPIFieldDescription.INVOICE_TYPE)
 
-
 class ContractInvoiceDetails(BaseModel):
     warning_message: str | None
     consumption_estimated: str | None
@@ -192,35 +182,28 @@ class ContractInvoiceDetails(BaseModel):
     agency: Agency | None = Field(description=OpenAPIFieldDescription.CONTRACT_INFO_INPUT_AGENCY)
     invoice: List[Invoice] | None
 
-
 class ContactContracts(ContactInfosOutput):
     contracts: List[ContractDto]
-
 
 class ContractDetails(BaseModel):
     contract: List[ContractDto]
 
-
 class InvoiceDetails(BaseModel):
     contract_number: str
     invoice: List[Invoice]
-
 
 class ContractInvoiceParams(BaseModel):
     contract_number: str | None = Field(description=OpenAPIFieldDescription.CONTRACT_UID)
     invoice_date_start: date | None = Field(description=OpenAPIFieldDescription.INVOICE_DATE_START)
     invoice_date_end: date | None = Field(description=OpenAPIFieldDescription.INVOICE_DATE_END)
 
-
 class ContractInvoiceForBillingService(BaseModel):
     contract_number: List[str] | None = Field(description=OpenAPIFieldDescription.CONTRACT_UID)
     invoice_date_start: str | None = Field(description=OpenAPIFieldDescription.INVOICE_DATE_START)
     invoice_date_end: str | None = Field(description=OpenAPIFieldDescription.INVOICE_DATE_END)
 
-
 class ContactDtoForBillingService(ContractDto):
     contact: ContactInfosOutput
-
 
 class ContactWithContractAndPricing(BaseModel):
     contact_contract: List[ContactDtoForBillingService]
