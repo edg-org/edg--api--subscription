@@ -3,8 +3,8 @@ import json
 import logging
 from typing import List
 from fastapi import Depends
+from datetime import datetime
 from sqlalchemy import String
-from datetime import date, datetime
 from api.subscriber.models.ContactsModel import Contacts
 from api.subscriber.repositories.ContactsRepository import ContactsRepository
 from api.exceptions import (
@@ -14,8 +14,7 @@ from api.exceptions import (
     ContactNotFound,
     SearchParamError,
     PhoneNumberExist, 
-    IdentityPidExist, 
-    IdentityPidNotFound,
+    IdentityPidExist,
     RepeatingPhoneNumber,
     RepeatingIdentityPid,
 )
@@ -27,7 +26,7 @@ from api.subscriber.schemas.ContactsSchema import (
     ContactsInputUpdateDto,
     ContactDtoWithPagination
 )
-from api.subscriber.services.GuidGenerator import GuidGenerator
+from api.utilis.GuidGenerator import GuidGenerator
 
 class ContactsService:
     contacts_repository: ContactsRepository
@@ -63,7 +62,6 @@ class ContactsService:
         return [self.buildContractOutputDto(c) for c in contacts]
 
     def check_save_business_logic(self, contact_body: ContactsInputDto) -> Contacts:
-        # contact_body = json.loads(contact_body.json())
         '''
             Pour ne pas ajouter deux utilisateur avec utilisant le meme numero
             email et la carte d'identite nous procedons a la verification dans la base 
@@ -80,9 +78,14 @@ class ContactsService:
         find_duplicate = self.contacts_repository.get_contact_by_pid_for_admin(contact_body['identity']['pid'])
         if find_duplicate is not None:
             raise IdentityPidExist(find_duplicate.infos['identity']['pid'])
+        
+        max_number = self.contacts_repository.getmaxnumber()
+        if max_number == 0:
+            code = 10000000
+            
         return Contacts(
             infos=contact_body,
-            customer_number=GuidGenerator.contactUID(contact_body['identity']['pid']),
+            customer_number=customer_number
         )
 
     def update_contact(self, number: str, contact_body: ContactsInputUpdateDto) -> ContactOutputDto:

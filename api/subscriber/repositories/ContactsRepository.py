@@ -13,7 +13,8 @@ class ContactsRepository:
     db: Session
 
     def __init__(
-            self, db: Session = Depends(get_db_connection)
+            self, 
+            db: Session = Depends(get_db_connection)
     ) -> None:
         self.db = db
 
@@ -137,3 +138,11 @@ class ContactsRepository:
         return self.db.scalars(
             select(Contacts).where(Contacts.customer_number == number)
         ).first()
+        
+     # get maximum number of contact
+    def getmaxnumber(self) -> int:
+        max_number = (
+            self.db.query(func.max(Contacts.customer_number))
+            .one()[0]
+        )
+        return 0 if max_number is None else max_number

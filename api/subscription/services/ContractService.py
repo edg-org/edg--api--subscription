@@ -1,12 +1,12 @@
 import json
 from fastapi import Depends
+from api.utilis.Helper import Helper
 from typing import List, Sequence, cast
 from datetime import datetime, timedelta, date
 from fastapi.encoders import jsonable_encoder
 from api.subscription.utilis.Status import ContractStatus
 from api.subscription.models.ContractModel import Contract
 from api.subscription.services.GuidGenerator import GuidGenerator
-from api.subscription.services.RequestMaster import RequestMaster
 from api.subscriber.schemas.ContactsSchema import ContactOutputDto
 from api.subscriber.services.ContactsService import ContactsService
 from api.subscription.repositories.ContractRepository import ContractRepository
@@ -153,7 +153,7 @@ class ContractService:
     def get_pricing(self, is_bocked_pricing: bool, subscription_code: int) -> Pricing:
         try:
             if is_bocked_pricing:
-                pricingDto: PricingDto = RequestMaster.get_pricing_info(
+                pricingDto: PricingDto = Helper.get_pricing_info(
                     subscription_code,
                     "http//:localhost:8080/pricing",
                     ""
@@ -350,7 +350,6 @@ class ContractService:
         :param params:
         :return:
         """
-        # logging.warning("excluded id", params.dict(exclude_none=True).)
 
         contracts: Sequence[List[Contract]] = self.contract_repository.get_contract_by_submitted_params(params, offset, limit)
         contracts: List[ContractDto] = [self.buildContractDto(c) for c in contracts]
@@ -423,21 +422,19 @@ class ContractService:
         ):
             params.invoice_date_end = (timedelta(weeks=-4 * 6) + params.invoice_date_start).replace(day=1)
 
-        # logging.error("start date "+str(params.invoice_date_start) + " end date " + str(params.invoice_date_end))
-
         # get invoice from billing microservice
         if params.contract_number is not None:
-            invoice: List[InvoiceDetails] = RequestMaster. \
-                get_invoice(ContractInvoiceForBillingService(
+            invoice: List[InvoiceDetails] = Helper.get_invoice(ContractInvoiceForBillingService(
                 invoice_date_start=params.invoice_date_start,
                 invoice_date_end=params.invoice_date_end,
                 contract_number=[params.contract_number]),
                 "http://localhost:8082/billing/invoice",
-                "token")
+                "token"
+            )
 
         else:
             try:
-                invoice: List[InvoiceDetails] = RequestMaster.get_invoice(
+                invoice: List[InvoiceDetails] = Helper.get_invoice(
                     ContractInvoiceForBillingService(
                         invoice_date_start=params.invoice_date_start,
                         invoice_date_end=params.invoice_date_end,
@@ -473,7 +470,7 @@ class ContractService:
             if contract is not None:
                 if not contract.infos['is_blocked_pricing']:
                     try:
-                        pricing: PricingDto = RequestMaster.get_pricing_info(
+                        pricing: PricingDto = Helper.get_pricing_info(
                             int(contract.infos['subscription_type']['code']),
                             "http://localhost:8082/pricing",
                             ""
@@ -491,7 +488,6 @@ class ContractService:
                         )
                 contractsDto.append(contract)
 
-        # logging.error(f"aaaa %s ", contracts[0].contacts.infos)
         contracts: List[ContactDtoForBillingService] = [ContactDtoForBillingService(
             contact=c.contacts.infos,
             id=c.id,
@@ -506,6 +502,4 @@ class ContractService:
             customer_number=c.customer_number
         ) for c in contractsDto]
 
-        return ContactWithContractAndPricing(
-            contact_contract=contracts
-        )
+        return ContactWithContractAndPricing(contact_contract=contracts)
