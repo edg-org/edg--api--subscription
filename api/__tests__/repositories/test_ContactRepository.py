@@ -1,9 +1,7 @@
 import json
 from unittest import TestCase
 from unittest.mock import create_autospec, patch, Mock
-
 from sqlalchemy.orm import Session
-
 from api.subscriber.repositories.ContactsRepository import ContactsRepository
 
 

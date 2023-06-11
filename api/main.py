@@ -5,6 +5,7 @@ from api.configs.Environment import get_env_var
 from api.subscriber.routers.v1.ContactRouter import contactRouter
 from api.subscription.routers.ContractRouter import contractRouter
 
+
 # Application Environment Configuration
 env = get_env_var()
 
@@ -14,6 +15,7 @@ app = FastAPI(
     description=env.app_desc,
     version="0.0." + env.api_version,
     openapi_tags=Tags,
+    root_path=env.API_ROOT_PATH,
 )
 
 # Add Routers

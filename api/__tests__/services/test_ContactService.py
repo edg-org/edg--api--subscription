@@ -3,7 +3,6 @@ import logging
 from typing import List
 from unittest import TestCase
 from unittest.mock import create_autospec, patch, Mock
-
 from api.subscriber.models.ContactsModel import Contacts
 from api.subscriber.repositories import ContactsRepository
 from api.subscriber.schemas.ContactsSchema import ContactInfos
