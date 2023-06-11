@@ -1,27 +1,26 @@
 from fastapi import FastAPI
-
-from api.configs.Environment import get_environment_variables
 from api.metadata.Tags import Tags
-from api.models.BaseModel import init
-from api.routers.v1.InvestigateContactsRouter import InvestigateContactRouter
-from api.routers.v1.ContactsRouter import ContactsRouter
+from api.configs.BaseModel import init
+from api.configs.Environment import get_env_var
+from api.subscriber.routers.v1.ContactRouter import contactRouter
+from api.subscription.routers.ContractRouter import contractRouter
+
 
 # Application Environment Configuration
-env = get_environment_variables()
+env = get_env_var()
 
 # Core Application Instance
 app = FastAPI(
-    title=env.APP_NAME,
-    version=env.API_VERSION,
+    title=env.app_name,
+    description=env.app_desc,
+    version="0.0." + env.api_version,
     openapi_tags=Tags,
-    root_path=env.API_ROOT_PATH,
+    root_path=env.api_root_path,
 )
 
 # Add Routers
-app.include_router(ContactsRouter)
-app.include_router(InvestigateContactRouter)
-
-# app.include_router(BookRouter)
+app.include_router(contactRouter)
+app.include_router(contractRouter)
 
 # Initialise Data Model Attributes
 init()

@@ -1,11 +1,10 @@
 Tags = [
     {
-        "name": "Contacts",
-        "description": "Contains CRUD operation on Contact",
+        "name": "Customer",
+        "description": "Contains CRUD operation on customer"
     },
     {
-        "name": "Contacts investigation",
-        "description": "Read operation for admins",
-    },
-
+        "name": "Subscription",
+        "description": "Contains CRUD operation on Subscription"
+    }
 ]

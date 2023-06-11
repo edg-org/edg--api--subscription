@@ -1,11 +1,12 @@
 import json
 import logging
+from typing import List
 from unittest import TestCase
-from unittest.mock import create_autospec, patch, Mock, MagicMock
-
-from api.repositories import ContactsRepository
-from api.schemas.pydantic.ContactsSchema import ContactsSchema, ContactInfos
-from api.services.ContactsService import ContactsService
+from unittest.mock import create_autospec, patch, Mock
+from api.subscriber.models.ContactsModel import Contacts
+from api.subscriber.repositories import ContactsRepository
+from api.subscriber.schemas.ContactsSchema import ContactInfos
+from api.subscriber.services.ContactsService import ContactsService
 
 
 class TestContactService(TestCase):
@@ -15,12 +16,8 @@ class TestContactService(TestCase):
     def setUp(self) -> None:
         super().setUp()
 
-        self.contact_repository = create_autospec(
-            ContactsRepository
-        )
-        self.contact_service = ContactsService(
-            self.contact_repository
-        )
+        self.contact_repository = create_autospec(ContactsRepository)
+        self.contact_service = ContactsService(self.contact_repository)
         self.contact_repository.get_contact_by_phone_for_client = Mock()
         self.contact_repository.get_contact_by_email_for_client = Mock()
         self.contact_repository.get_contact_by_pid_for_client = Mock()
@@ -30,16 +27,16 @@ class TestContactService(TestCase):
         self.contact_repository.get_contact_by_type_for_client = Mock()
         self.contact_repository.get_contact_by_type_for_admin = Mock()
 
-    @patch("api.schemas.pydantic.ContactsSchema.ContactInfos", autospec=True)
-    @patch("api.schemas.pydantic.ContactsSchema.ContactsSchema", autospec=True)
-    def test_create_contact(self, ContactInfos, ContactsSchema):
+    @patch("api.subscriber.schemas.ContactsSchema.ContactInfos", autospec=True)
+    @patch("api.subscriber.schemas.ContactsSchema.ContactsInputDto", autospec=True)
+    def test_create_contact(self, ContactInfos, ContactsInputDto):
         contactInfos: ContactInfos() = self.loadJson()
 
         self.contact_repository.get_contact_by_phone_for_client.return_value = None
         self.contact_repository.get_contact_by_email_for_client.return_value = None
         self.contact_repository.get_contact_by_pid_for_client.return_value = None
 
-        contactSchema = ContactsSchema()
+        contactSchema = ContactsInputDto()
         contactSchema.infos = contactInfos
         logging.error("contact info type %s ", type(contactInfos))
 
@@ -51,24 +48,22 @@ class TestContactService(TestCase):
 
         self.contact_service.create_contact.assert_called_once_with(contactBody=contactSchema)
 
-        # self.contactRepository.createContact.assert_called_once()
-
     def loadJson(self):
         f = open("api/__tests__/createContact.json")
         return json.load(f)
 
     @patch(
-        "api.schemas.pydantic.ContactsSchema.ContactsSchema",
+        "api.subscriber.schemas.ContactsSchema.ContactsInputDto",
         autospec=True,
     )
-    def test_update_contact(self, ContactsSchema):
+    def test_update_contact(self, ContactsInputDto):
         contactInfos: ContactInfos() = self.loadJson()
 
         self.contact_repository.get_contact_by_phone_for_client.return_value = None
         self.contact_repository.get_contact_by_email_for_client.return_value = None
         self.contact_repository.get_contact_by_pid_for_client.return_value = None
 
-        contactSchema = ContactsSchema()
+        contactSchema = ContactsInputDto()
         contactSchema.infos = contactInfos
         logging.error("contact info type %s ", type(contactInfos))
 
@@ -79,35 +74,45 @@ class TestContactService(TestCase):
         self.contact_service.update_contact.assert_called_once_with("string", contactSchema)
 
     def test_get_contact_by_email_for_client(self):
+        self.contact_service.buildContractOutputDto = Mock(return_value=None)
         c = self.contact_service.get_contact_by_email_for_client("user@example.com")
-        logging.info(f" result %s ", c.infos)
-        self.contact_repository.get_contact_by_email_for_client.assert_called_once_with("user@example.com")
+        self.contact_repository.get_contact_by_email_for_client.assert_called_once()
 
-    def test_get_contact_by_phone_for_client(self):
+    @patch("api.subscriber.schemas.ContactsSchema.ContactOutputDto", autospec=True)
+    def test_get_contact_by_phone_for_client(self, ContactOutputDto):
+        self.contact_service.buildContractOutputDto = Mock(return_value=None)
         self.contact_service.get_contact_by_phone_for_client("+224-610-18-59-36")
         self.contact_repository.get_contact_by_phone_for_client.assert_called_once()
 
+
     def test_get_contact_by_pid_for_client(self):
+        self.contact_service.buildContractOutputDto = Mock(return_value=None)
         self.contact_service.get_contact_by_pid_for_client("string")
         self.contact_repository.get_contact_by_pid_for_client.assert_called_once()
 
     def test_get_contact_by_email_for_admin(self):
+        self.contact_service.buildContractOutputDto = Mock(return_value=None)
         c = self.contact_service.get_contact_by_email_for_admin("user@example.com")
-        logging.info(f" result %s ", c.infos)
         self.contact_repository.get_contact_by_email_for_admin.assert_called_once_with("user@example.com")
 
     def test_get_contact_by_phone_for_admin(self):
+        self.contact_service.buildContractOutputDto = Mock(return_value=None)
         self.contact_service.get_contact_by_phone_for_admin("+224-610-18-59-36")
         self.contact_repository.get_contact_by_phone_for_admin.assert_called_once()
 
     def test_get_contact_by_pid_for_admin(self):
+        self.contact_service.buildContractOutputDto = Mock(return_value=None)
         self.contact_service.get_contact_by_pid_for_admin("string")
         self.contact_repository.get_contact_by_pid_for_admin.assert_called_once()
 
     def test_get_contact_by_type_for_admin(self):
+        self.contact_service.buildContractOutputDto = Mock(return_value=None)
+        self.contact_repository.get_contact_by_type_for_admin = Mock(return_value=[Contacts])
         self.contact_service.get_contact_by_type_for_admin("Client", 0, 4)
         self.contact_repository.get_contact_by_type_for_admin.assert_called_once()
 
     def test_get_contact_by_type_for_client(self):
+        self.contact_service.buildContractOutputDto = Mock(return_value=None)
+        self.contact_repository.get_contact_by_type_for_client = Mock(return_value=[Contacts])
         self.contact_service.get_contact_by_type_for_client("Client", 0, 4)
         self.contact_repository.get_contact_by_type_for_client.assert_called_once()

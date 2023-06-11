@@ -1,29 +1,30 @@
-from functools import lru_cache
-import os
-
+from os import getenv
 from dotenv import load_dotenv
+from functools import lru_cache
 from pydantic import BaseSettings
 
 load_dotenv()
 
-
-class EnvironmentSettings(BaseSettings):
-    API_VERSION: str = os.getenv("API_VERSION")
-    APP_NAME: str = os.getenv("APP_NAME")
-    DATABASE_DIALECT: str = os.getenv("DATABASE_DIALECT")
-    DATABASE_HOSTNAME: str = os.getenv("DATABASE_HOSTNAME")
-    DATABASE_NAME: str = os.getenv("DATABASE_NAME")
-    DATABASE_PASSWORD: str = os.getenv("DATABASE_PASSWORD")
-    DATABASE_PORT: int = int(os.getenv("DATABASE_PORT"))
-    DATABASE_USERNAME: str = os.getenv("DATABASE_USERNAME")
-    API_ROOT_PATH: str = os.getenv("API_ROOT_PATH")
-    DEBUG_MODE: bool = bool(os.getenv("DEBUG_MODE"))
+class __EnvironmentSettings(BaseSettings):
+    app_name: str = getenv("APP_NAME")
+    app_desc: str = getenv("APP_DESC")
+    api_version: str = getenv("API_VERSION")
+    database_dialect: str = getenv("DATABASE_DIALECT")
+    database_hostname: str = getenv("DATABASE_HOSTNAME")
+    database_username: str = getenv("DATABASE_USERNAME")
+    database_password: str = getenv("DATABASE_PASSWORD")
+    database_name: str = getenv("DATABASE_NAME")
+    database_port: int = int(getenv("DATABASE_PORT"))
+    api_routers_prefix: str = getenv("API_ROUTERS_PREFIX")
+    debug_mode: bool = bool(getenv("DEBUG_MODE"))
+    auth_domain_name: str = getenv("AUTH_DOMAIN_NAME")
+    api_root_path: str = getenv("API_ROOT_PATH")
 
     class Config:
-        env_file = ".env"
+        runtime_env = getenv("ENV")
+        env_file = (f".env.{runtime_env}" if runtime_env else ".env")
         env_file_encoding = "utf-8"
 
-
 @lru_cache
-def get_environment_variables():
-    return EnvironmentSettings()
+def get_env_var():
+    return __EnvironmentSettings()

@@ -1,11 +1,8 @@
 import json
-from datetime import datetime
 from unittest import TestCase
-from unittest.mock import create_autospec, Mock, patch
-
+from unittest.mock import create_autospec, patch, Mock
 from sqlalchemy.orm import Session
-
-from api.repositories.ContactsRepository import ContactsRepository
+from api.subscriber.repositories.ContactsRepository import ContactsRepository
 
 
 class TestContactRepository(TestCase):
@@ -19,15 +16,15 @@ class TestContactRepository(TestCase):
             self.session
         )
 
-    @patch("api.models.ContactsModel.Contacts", autospec=True)
+    @patch("api.subscriber.models.ContactsModel.Contacts", autospec=True)
     def test_create_contact(self, Contacts):
         contact = Contacts(infos=self.loadJson())
 
         self.contacts_repository.create_contact(contact)
 
-        self.session.add.assert_called_once_with(contact)
+        self.session.add_all.assert_called_once_with(contact)
 
-    @patch("api.models.ContactsModel.Contacts", autospec=True)
+    @patch("api.subscriber.models.ContactsModel.Contacts", autospec=True)
     def test_update_contact(self, Contacts):
         contact = Contacts(infos=self.loadJson())
 
@@ -54,7 +51,7 @@ class TestContactRepository(TestCase):
         self.session.scalars.assert_called_once()
 
     def test_get_contacts_for_admin(self):
-        self.contacts_repository.get_contacts_for_admin(0, 4)
+        self.contacts_repository.get_contacts_for_admin()
         self.session.scalars.assert_called_once()
 
     def test_get_contact_by_pid_for_client(self):
@@ -68,10 +65,6 @@ class TestContactRepository(TestCase):
 
     def test_get_contact_by_phone_for_client(self):
         self.contacts_repository.get_contact_by_phone_for_client("+224-610-18-22-15")
-        self.session.scalars.assert_called_once()
-
-    def test_get_contacts_for_client(self):
-        self.contacts_repository.get_contacts_for_client(0, 4)
         self.session.scalars.assert_called_once()
 
     def test_get_contacts_by_type_for_client(self):

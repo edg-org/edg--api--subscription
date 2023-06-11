@@ -1,32 +1,40 @@
 version: '3'
+networks:
+  backend:
+    driver: bridge
 services:
   app:
     build:
       context: .
       dockerfile: Dockerfile
       args:
-        PYTHON_TAG: 3.9
+        PYTHON_TAG: "3.10"
         GH_USER: edg-org
         GH_REPO: edg--template
     ports:
-      - "8080:80"
+      - "8003:80"
     env_file:
-      - api/.env
+      - .env
     restart: on-failure
+    networks:
+      - backend
     depends_on:
       - db
+
   db:
     image: mysql:8.0
     ports:
-      - "3306:3306"
+      - "3309:3306"
     volumes:
       - mysql_data:/var/lib/mysql
       - ./scripts/sql/:/docker-entrypoint-initdb.d/
     environment:
       MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: testdb
-      MYSQL_USER: authuser
-      MYSQL_PASSWORD: authuser
+      MYSQL_DATABASE: subscription_db
+      #MYSQL_USER: authuser
+      #MYSQL_PASSWORD: authuser
     restart: always
+    networks:
+      - backend
 volumes:
   mysql_data:
