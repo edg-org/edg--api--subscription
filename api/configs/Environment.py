@@ -17,7 +17,8 @@ class __EnvironmentSettings(BaseSettings):
     database_port: int = int(getenv("DATABASE_PORT"))
     api_routers_prefix: str = getenv("API_ROUTERS_PREFIX")
     debug_mode: bool = bool(getenv("DEBUG_MODE"))
-    domaine_name: str = getenv("DOMAINE_NAME")
+    auth_domain_name: str = getenv("AUTH_DOMAIN_NAME")
+    api_root_path: str = getenv("API_ROOT_PATH")
 
     class Config:
         runtime_env = getenv("ENV")
