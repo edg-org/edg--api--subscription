@@ -14,6 +14,7 @@ app = FastAPI(
     title=env.APP_NAME,
     version=env.API_VERSION,
     openapi_tags=Tags,
+    root_path=env.API_ROOT_PATH,
 )
 
 # Add Routers
@@ -24,7 +25,3 @@ app.include_router(InvestigateContactRouter)
 
 # Initialise Data Model Attributes
 init()
-
-
-
-

@@ -1,28 +1,26 @@
 from functools import lru_cache
 import os
 
+from dotenv import load_dotenv
 from pydantic import BaseSettings
 
-
-@lru_cache
-def get_env_filename():
-    runtime_env = os.getenv("ENV")
-    return f".env.{runtime_env}" if runtime_env else ".env"
+load_dotenv()
 
 
 class EnvironmentSettings(BaseSettings):
-    API_VERSION: str
-    APP_NAME: str
-    DATABASE_DIALECT: str
-    DATABASE_HOSTNAME: str
-    DATABASE_NAME: str
-    DATABASE_PASSWORD: str
-    DATABASE_PORT: int
-    DATABASE_USERNAME: str
-    DEBUG_MODE: bool
+    API_VERSION: str = os.getenv("API_VERSION")
+    APP_NAME: str = os.getenv("APP_NAME")
+    DATABASE_DIALECT: str = os.getenv("DATABASE_DIALECT")
+    DATABASE_HOSTNAME: str = os.getenv("DATABASE_HOSTNAME")
+    DATABASE_NAME: str = os.getenv("DATABASE_NAME")
+    DATABASE_PASSWORD: str = os.getenv("DATABASE_PASSWORD")
+    DATABASE_PORT: int = int(os.getenv("DATABASE_PORT"))
+    DATABASE_USERNAME: str = os.getenv("DATABASE_USERNAME")
+    API_ROOT_PATH: str = os.getenv("API_ROOT_PATH")
+    DEBUG_MODE: bool = bool(os.getenv("DEBUG_MODE"))
 
     class Config:
-        env_file = get_env_filename()
+        env_file = ".env"
         env_file_encoding = "utf-8"
 
 
