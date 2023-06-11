@@ -8,7 +8,7 @@ class AllOptional(ModelMetaclass):
             annotations.update(base.__annotations__)
         for field in annotations:
             if not field.startswith("__"):
-                annotations[field] = (annotations[field] | None)
+                annotations[field] = (annotations[field])
         namespace["__annotations__"] = annotations
         return super().__new__(cls, name, bases, namespace, **kwargs)
 

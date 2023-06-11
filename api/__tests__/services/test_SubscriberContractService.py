@@ -2,10 +2,10 @@ import json
 from unittest import TestCase
 from unittest.mock import create_autospec, Mock, patch
 
-from api.subscriber.repositories.ContactsRepository import ContactsRepository
 from api.subscriber.services.ContactsService import ContactsService
-from api.subscription.repositories.ContractRepository import ContractRepository
 from api.subscription.services.ContractService import ContractService
+from api.subscriber.repositories.ContactsRepository import ContactsRepository
+from api.subscription.repositories.ContractRepository import ContractRepository
 
 
 def loadJson():
@@ -15,7 +15,7 @@ def loadJson():
     return a
 
 
-class ContractService(TestCase):
+class TestContractService(TestCase):
     contract_repository: ContractRepository
     contract_service: ContractService
     contacts_service: ContactsService
@@ -24,18 +24,10 @@ class ContractService(TestCase):
     def setUp(self) -> None:
         super().setUp()
 
-        self.contract_repository = create_autospec(
-            ContractRepository
-        )
-        self.contacts_repository = create_autospec(
-            ContactsRepository
-        )
-        self.contract_service = ContractService(
-            self.contract_repository
-        )
-        self.contacts_service = ContactsService(
-            self.contacts_repository
-        )
+        self.contract_repository = create_autospec(ContractRepository)
+        self.contacts_repository = create_autospec(ContactsRepository)
+        self.contract_service = ContractService(self.contract_repository)
+        self.contacts_service = ContactsService(self.contacts_repository)
         self.contract_service.check_save_business_logic = Mock(return_value=None)
         self.contract_repository.get_contract_by_delivery_point_on_number = Mock(return_value=None)
 
@@ -55,8 +47,7 @@ class ContractService(TestCase):
         contract_schema = ContractSchema()
         self.contract_repository.get_contract_by_contract_uid_for_client = Mock(return_value=None)
         self.contacts_service.get_contact_by_id_for_client = Mock(
-            return_value=
-            {
+            return_value={
                 "infos": {
                     "job": "string",
                     "name": "string",

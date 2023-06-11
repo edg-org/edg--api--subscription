@@ -1,42 +1,42 @@
 import json
-import logging
-from datetime import datetime, timedelta, date
-from typing import List, Sequence, cast
-
 from fastapi import Depends
+from typing import List, Sequence, cast
+from datetime import datetime, timedelta, date
 from fastapi.encoders import jsonable_encoder
-
+from api.subscription.utilis.Status import ContractStatus
 from api.subscription.models.ContractModel import Contract
+from api.subscription.services.GuidGenerator import GuidGenerator
+from api.subscription.services.RequestMaster import RequestMaster
 from api.subscriber.schemas.ContactsSchema import ContactOutputDto
-
 from api.subscriber.services.ContactsService import ContactsService
-from api.subscription.exceptions import ContractNotFound, DeleteContractException, ContactNotFound, \
-    EditContactWhileNotOwner, ContractDisabled, ContractExist, ContractStatusError, RepeatingDeliveryPoint, \
-    ContractLevelError, StatusErrorWhenCurrentStatusIsEqualInitial, \
-    StatusErrorWhenCurrentStatusIsEqualEdited, ContractIsAlreadyActivated, InvalidMetricNumberOrConsumptionEstimation, \
-    MetricNumberAndConsumptionEstimationCannotBeProvidedAtTheSameTime, ContactOrContractNotFound
-
 from api.subscription.repositories.ContractRepository import ContractRepository
-from api.subscription.schemas.ContractSchema import \
-    (ContractSchema,
+from api.subscription.exceptions import (
+    ContractNotFound, 
+    DeleteContractException, 
+    ContractDisabled, 
+    ContractExist, 
+    ContractStatusError, 
+    RepeatingDeliveryPoint,
+    ContractLevelError, 
+    StatusErrorWhenCurrentStatusIsEqualInitial,
+    StatusErrorWhenCurrentStatusIsEqualEdited, 
+    ContractIsAlreadyActivated, 
+    ContactOrContractNotFound
+)
+from api.subscription.schemas.ContractSchema import (
+    ContractSchema,
      ContractDto,
      ContractDtoWithPagination,
      ContractInfoInputUpdate,
-     ContractDetails,
      InvoiceDetails,
      ContractInvoiceDetails,
-     ContactContracts,
      ContractInvoiceParams,
      Invoice,
-     ContractInfoOutput,
      ContractInvoiceForBillingService,
      ContactDtoForBillingService,
      ContactWithContractAndPricing,
-     ContractDtoQueryParams, PricingDto, Pricing, ContractInfoDto
-     )
-from api.subscription.services.GuidGenerator import GuidGenerator
-from api.subscription.services.RequestMaster import RequestMaster
-from api.subscription.utilis.Status import ContractStatus
+     ContractDtoQueryParams, PricingDto, Pricing
+)
 
 
 class ContractService:
@@ -150,7 +150,7 @@ class ContractService:
             contract_number=GuidGenerator.contractUID(contact['infos']['identity']['pid']),
         )
 
-    def get_pricing(self, is_bocked_pricing: bool, subscription_code: int) -> Pricing | None:
+    def get_pricing(self, is_bocked_pricing: bool, subscription_code: int) -> Pricing:
         try:
             if is_bocked_pricing:
                 pricingDto: PricingDto = RequestMaster.get_pricing_info(
@@ -201,8 +201,7 @@ class ContractService:
             raise ContractDisabled
 
         # check if delivery point on metric_number exist, if true throw error
-        contract_exist_by_delivery_point_on_metric_number = self.contract_repository. \
-            get_contract_by_delivery_point_on_metric_number(contract_schema['delivery_point']['metric_number'])
+        contract_exist_by_delivery_point_on_metric_number = self.contract_repository.get_contract_by_delivery_point_on_metric_number(contract_schema['delivery_point']['metric_number'])
         # logging.error("metric number %s", contract_exist_by_delivery_point_on_metric_number)
         if (contract_exist_by_delivery_point_on_metric_number is not None
                 and contract_exist_by_delivery_point_on_metric_number.contract_number != contract_exist.contract_number
@@ -257,9 +256,7 @@ class ContractService:
         :param contract_number:
         :return:
         """
-        contract: Contract = self.contract_repository.get_contract_by_contract_uid_for_update(
-            contract_number
-        )
+        contract: Contract = self.contract_repository.get_contract_by_contract_uid_for_update(contract_number)
         if contract.deleted_at is not None:
             raise ContractDisabled
         if contract is None:
@@ -278,7 +275,7 @@ class ContractService:
 
         return self.buildContractDto(contract)
 
-    def contract_status_logic(self, contract: Contract | None, status: str) -> Contract:
+    def contract_status_logic(self, contract: Contract, status: str) -> Contract:
         # check contract status
         # if the status is ContractStatus.INITIAL, so it can't change to ContractStatus.CREATED
         # or ContractStatus.INCOMPLETE
@@ -305,9 +302,7 @@ class ContractService:
         :param contract_number:
         :return: None
         """
-        contract: Contract = self.contract_repository.get_contract_by_contract_uid(
-            contract_number
-        )
+        contract: Contract = self.contract_repository.get_contract_by_contract_uid(contract_number)
         if contract is None:
             raise DeleteContractException
         contract.deleted_at = datetime.now().replace(microsecond=0)
@@ -318,8 +313,7 @@ class ContractService:
         contract: Contract = self.contract_repository.update_contract(contract)
         return self.buildContractDto(contract)
 
-    def get_contract_by_customer_id_for_client(self, customer_id: int, offset: int, limit: int) \
-            -> List[ContractDto]:
+    def get_contract_by_customer_id_for_client(self, customer_id: int, offset: int, limit: int) -> List[ContractDto]:
         """
         This service is used  to filter activated contract by costumer id
         :param customer_id:
@@ -348,8 +342,7 @@ class ContractService:
 
         return self.buildContractDto(contract)
 
-    def get_contract_by_submitted_params(self, params: ContractDtoQueryParams, offset: int,
-                                         limit: int) -> ContractDtoWithPagination:
+    def get_contract_by_submitted_params(self, params: ContractDtoQueryParams, offset: int, limit: int) -> ContractDtoWithPagination:
         """
         This function fileter a contract by submitted params
         :param offset:
@@ -359,8 +352,7 @@ class ContractService:
         """
         # logging.warning("excluded id", params.dict(exclude_none=True).)
 
-        contracts: Sequence[List[Contract]] = self.contract_repository. \
-            get_contract_by_submitted_params(params, offset, limit)
+        contracts: Sequence[List[Contract]] = self.contract_repository.get_contract_by_submitted_params(params, offset, limit)
         contracts: List[ContractDto] = [self.buildContractDto(c) for c in contracts]
         if len(contracts) == 0:
             raise ContractNotFound
@@ -461,8 +453,7 @@ class ContractService:
 
         return [self.buildContractInvoiceDetails(i.invoice, c) for i in invoice for c in contracts]
 
-    def buildContractInvoiceDetails(self, invoice: List[Invoice], contract: ContractDto) \
-            -> ContractInvoiceDetails:
+    def buildContractInvoiceDetails(self, invoice: List[Invoice], contract: ContractDto) -> ContractInvoiceDetails:
         return ContractInvoiceDetails(
             consumption_estimated=str(contract.infos.consumption_estimated.value) + " " +
                                   str(contract.infos.consumption_estimated.measurement_unit),

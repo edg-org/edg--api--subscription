@@ -16,12 +16,8 @@ class TestContactService(TestCase):
     def setUp(self) -> None:
         super().setUp()
 
-        self.contact_repository = create_autospec(
-            ContactsRepository
-        )
-        self.contact_service = ContactsService(
-            self.contact_repository
-        )
+        self.contact_repository = create_autospec(ContactsRepository)
+        self.contact_service = ContactsService(self.contact_repository)
         self.contact_repository.get_contact_by_phone_for_client = Mock()
         self.contact_repository.get_contact_by_email_for_client = Mock()
         self.contact_repository.get_contact_by_pid_for_client = Mock()
@@ -51,8 +47,6 @@ class TestContactService(TestCase):
         self.contact_repository.create_contact = Mock(return_value=None)
 
         self.contact_service.create_contact.assert_called_once_with(contactBody=contactSchema)
-
-        # self.contactRepository.createContact.assert_called_once()
 
     def loadJson(self):
         f = open("api/__tests__/createContact.json")

@@ -96,28 +96,28 @@ class ContactsInputUpdateDto(ContactInfos):
         hide_fields = {"birthday"}
 
 class ContactOutputDto(BaseModel):
-    id: int | None
-    infos: ContactInfosOutput | None
-    is_activated: bool | None
-    customer_number: str | None
-    created_at: datetime | None
-    updated_at: datetime | None
-    deleted_at: datetime | None
+    id: int
+    infos: ContactInfosOutput
+    is_activated: bool
+    customer_number: str
+    created_at: Optional[datetime]
+    updated_at: Optional[datetime]
+    deleted_at: Optional[datetime]
 
 class ContactDtoWithPagination(BaseModel):
     count: int
     total: int
     offset: int
     limit: int
-    data: List[ContactOutputDto] | None
+    data: List[ContactOutputDto]
 
 class SearchByParams(BaseModel):
-    pid: str | None = Field(description=OpenAPIFieldDescription.PID)
-    phone: str | None = Field(description=OpenAPIFieldDescription.PHONE)
-    email: str | None = Field(description=OpenAPIFieldDescription.EMAIL)
-    customer_number: str | None = Field(description=OpenAPIFieldDescription.CUSTOMER_NUMBER)
-    status: bool | None = Field(description=OpenAPIFieldDescription.PID)
+    pid: str = Field(description=OpenAPIFieldDescription.PID)
+    phone: str = Field(description=OpenAPIFieldDescription.PHONE)
+    email: str = Field(description=OpenAPIFieldDescription.EMAIL)
+    customer_number: Optional[str] = Field(description=OpenAPIFieldDescription.CUSTOMER_NUMBER)
+    status: Optional[bool] = Field(description=OpenAPIFieldDescription.PID)
 
 class SearchAllContact(BaseModel):
-    type: str | None = Field(description=OpenAPIFieldDescription.CONTACT_TYPE)
-    status: bool | None = Field(description=OpenAPIFieldDescription.PID)
+    type: Optional[str] = Field(description=OpenAPIFieldDescription.CONTACT_TYPE)
+    status: Optional[bool] = Field(description=OpenAPIFieldDescription.PID)
