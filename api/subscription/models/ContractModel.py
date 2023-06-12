@@ -11,25 +11,8 @@ from sqlalchemy.orm import (
 
 
 class Contract(EntityMeta):
+    
     __tablename__ = "contracts"
-
-    """
-    id: Mapped[int] = mapped_column(MEDIUMINT(unsigned=True), index=True, primary_key=True)
-    contract_number: Mapped[int] = mapped_column(BIGINT(unsigned=True), index=True, unique=True, nullable=False)
-    customer_number: Mapped[str] = mapped_column(BIGINT(unsigned=True), index=True, nullable=False)
-    customer_id: Mapped[int] = mapped_column(ForeignKey("contacts.id"))
-    infos: Mapped[JSON] = mapped_column(JSON)
-    attachment: Mapped[dict] = mapped_column(JSON, default=None, nullable=True)
-    is_activated: Mapped[bool] = mapped_column(default=False)
-
-    opening_date: Mapped[datetime] = mapped_column(nullable=True, default=None)
-    closing_date: Mapped[datetime] = mapped_column(nullable=True, default=None)
-    created_at: Mapped[datetime] = mapped_column(default=datetime.now())
-    updated_at: Mapped[datetime] = mapped_column(nullable=True, default=None)
-    deleted_at: Mapped[datetime] = mapped_column(nullable=True, default=None)
-
-    contacts: Mapped[List["Contact"]] = relationship(back_populates="contracts")
-    """
     
     id = Column(MEDIUMINT(unsigned=True), primary_key=True, index=True)
     contract_number = Column(BIGINT(unsigned=True), index=True, unique=True, nullable=False)

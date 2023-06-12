@@ -10,17 +10,8 @@ from sqlalchemy.orm import (
 )
 
 class Contact(EntityMeta):
-    __tablename__ = "contacts"
-
-    #id: Mapped[int] = mapped_column(MEDIUMINT(unsigned=True), index=True, primary_key=True)
-    #infos: Mapped[Dict] = mapped_column(JSON)
-    #customer_number: Mapped[str] = mapped_column(BIGINT(unsigned=True), index=True, unique=True, nullable=False)
-    #is_activated: Mapped[bool] = mapped_column(default=True)
-    #created_at: Mapped[datetime] = mapped_column(default=datetime.now())
-    #updated_at: Mapped[datetime] = mapped_column(default=None, nullable=True)
-    #deleted_at: Mapped[datetime] = mapped_column(default=None, nullable=True)
     
-    #contract: Mapped[Contract] = relationship(back_populates="contacts")
+    __tablename__ = "contacts"
     
     id = Column(MEDIUMINT(unsigned=True), primary_key=True, index=True)
     customer_number = Column(BIGINT(unsigned=True), index=True, unique=True, nullable=False)
