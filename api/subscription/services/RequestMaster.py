@@ -62,3 +62,4 @@ class RequestMaster:
                 ) for invoiceDetails in response.text]
         except:
             raise RequestResourceError
+

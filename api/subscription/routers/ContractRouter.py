@@ -6,9 +6,9 @@ from api.subscription.services.ContractService import ContractService
 from api.subscription.schemas.ContractSchema import (
     ContractDto,
     ContractDtoQueryParams,
-    ContractSchema, 
+    ContractSchema,
     ContractDtoWithPagination,
-    ContactDtoForBillingService, 
+    ContactDtoForBillingService,
     ContactWithContractAndPricing,
     ContractInfoInputUpdate
 )
@@ -19,7 +19,9 @@ router_path = env.api_routers_prefix + env.api_version
 contractRouter = APIRouter(
     prefix=router_path + "/subscriptions",
     tags=["Subscription"],
+    dependencies=[Depends(JWTBearer())]
 )
+
 
 @contractRouter.post(
     "/",
@@ -65,6 +67,7 @@ def delete_contract(
 ):
     return contract_service.delete_contract(number)
 
+
 @contractRouter.get(
     "/search",
     response_model=ContractDtoWithPagination,
@@ -83,6 +86,7 @@ async def get_contract_by_submitted_params(
         offset,
         limit
     )
+
 
 # This endpoint will receive a list of contract_number and fetch information about contact and contracts
 @contractRouter.get(

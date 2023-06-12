@@ -23,7 +23,7 @@ class Contacts(EntityMeta):
     created_at: Mapped[datetime] = mapped_column(default=datetime.now())
     updated_at: Mapped[datetime] = mapped_column(default=None, nullable=True)
     deleted_at: Mapped[datetime] = mapped_column(default=None, nullable=True)
-    contract: Mapped[Contract] = relationship("Contract", back_populates="contacts")
+    contracts: Mapped["contacts"] = relationship("Contract", back_populates="contacts")
 
     def normalize(self):
         return {

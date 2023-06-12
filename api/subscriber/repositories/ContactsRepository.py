@@ -1,7 +1,7 @@
 from typing import List
 
 from fastapi import Depends
-from sqlalchemy import select, func
+from sqlalchemy import select, func, Sequence
 from sqlalchemy.orm import Session
 
 from api.configs.Database import get_db_connection
@@ -103,7 +103,8 @@ class ContactsRepository:
             Contacts.infos['type'] == contact_type.lower().capitalize(),
             Contacts.is_activated == True
         ).offset(offset).limit(limit)).all()
-    def get_contacts_for_client(self, offset: int, limit: int, type_contact: SearchAllContact) -> List[Contacts]:
+
+    def get_contacts_for_client(self, offset: int, limit: int, type_contact: SearchAllContact) -> Sequence[List[Contacts]]:
         return self.db.scalars(select(Contacts).where(
             Contacts.is_activated == type_contact.status
             if type_contact.status is not None else True,

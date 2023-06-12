@@ -394,6 +394,7 @@ class ContractService:
             raise ContactOrContractNotFound
         # build contract dto
         contracts: List[ContractDto] = [self.buildContractDto(c) for c in contracts]
+        print("=======================> contract =========>", jsonable_encoder(contracts))
 
         """
            Managing of invoice_date_start and invoice_date_end
@@ -446,10 +447,7 @@ class ContractService:
                     "http://localhost:8082/billing/invoice",
                     "")
             except:
-                return [InvoiceDetails(
-                    contract_number="dfdsf",
-                    invoice=[Invoice()]
-                )]
+                return [self.buildContractInvoiceDetails(i.invoice, c) for i in [] for c in contracts]
 
         return [self.buildContractInvoiceDetails(i.invoice, c) for i in invoice for c in contracts]
 
@@ -462,7 +460,7 @@ class ContractService:
             subscribed_power=contract.infos.subscribed_power,
             delivery_point=contract.infos.delivery_point,
             agency=contract.infos.agency,
-            is_bocked_pricing=contract.infos.is_bocked_pricing,
+            is_bocked_pricing=contract.infos.is_blocked_pricing,
             invoice=invoice
         )
 

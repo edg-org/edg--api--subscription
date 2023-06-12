@@ -15,7 +15,7 @@ class Contract(EntityMeta):
     infos: Mapped[JSON] = mapped_column(JSON)
     customer_id: Mapped[int] = mapped_column(ForeignKey("contacts.id"))
     customer_number: Mapped[str] = mapped_column(String(10), nullable=False)
-    contacts: Mapped[List["Contacts"]] = relationship("Contacts", back_populates="contracts")
+    contacts: Mapped[List["contracts"]] = relationship("Contacts", back_populates="contracts")
 
     opening_date: Mapped[datetime] = mapped_column(nullable=True, default=None)
     closing_date: Mapped[datetime] = mapped_column(nullable=True, default=None)

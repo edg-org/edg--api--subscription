@@ -18,6 +18,7 @@ class __EnvironmentSettings(BaseSettings):
     api_routers_prefix: str = getenv("API_ROUTERS_PREFIX")
     debug_mode: bool = bool(getenv("DEBUG_MODE"))
     auth_domain_name: str = getenv("AUTH_DOMAIN_NAME")
+    billing_domain_name: str = getenv("BILLING_DOMAIN_NAME")
     api_root_path: str = getenv("API_ROOT_PATH")
 
     class Config:
