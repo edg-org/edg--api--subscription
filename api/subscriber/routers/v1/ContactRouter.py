@@ -1,30 +1,28 @@
 from typing import List
 from fastapi import APIRouter, Depends, status
-from api.configs.Environment import get_env_var
+from api.utilis.JWTBearer import JWTBearer, env
 from api.subscription.services.ContractService import ContractService
-from api.subscriber.schemas.ContactsSchema import (
+from api.subscriber.schemas.ContactSchema import (
     SearchByParams,
     ContactOutputDto, 
-    ContactsInputDto,
+    ContactInputDto,
     SearchAllContact, 
-    ContactsInputUpdateDto,
+    ContactInputUpdateDto,
     ContactDtoWithPagination
 )
-from api.subscriber.services.ContactsService import ContactsService
+from api.subscriber.services.ContactService import ContactService
 from api.subscription.schemas.ContractSchema import (
     ContractDto,
-    InvoiceDetails,
-    ContactContracts,
     ContractInvoiceParams,
     ContractInvoiceDetails
 )
 
-env = get_env_var()
 router_path = env.api_routers_prefix + env.api_version
 
 contactRouter = APIRouter(
-    prefix=router_path + "/customers",
     tags=["Customer"],
+    prefix=router_path + "/customers",
+    #dependencies=[Depends(JWTBearer())]
 )
 
 @contactRouter.post(
@@ -34,8 +32,8 @@ contactRouter = APIRouter(
     description="use this endpoint to create a new contact"
 )
 def create_contact(
-        contact: List[ContactsInputDto],
-        contact_service: ContactsService = Depends()
+    contact: List[ContactInputDto],
+    contact_service: ContactService = Depends()
 ):
     return contact_service.create_contact(contact)
 
@@ -47,9 +45,9 @@ def create_contact(
     description="use this endpoint to update user infos"
 )
 def update_contact(
-        number: str,
-        contact: ContactsInputUpdateDto,
-        contact_service: ContactsService = Depends()
+    number: str,
+    contact: ContactInputUpdateDto,
+    contact_service: ContactService = Depends()
 ):
     return contact_service.update_contact(number, contact)
 
@@ -60,8 +58,8 @@ def update_contact(
     description="This will display info only for active account"
 )
 def delete_contact(
-        number: str,
-        contact_service: ContactsService = Depends()
+    number: str,
+    contact_service: ContactService = Depends()
 ):
     contact_service.delete_contact(number)
 
@@ -74,8 +72,8 @@ def delete_contact(
                 ", email, customer number and phone number, at least one param should be applied) return specific user"
 )
 async def search_contact_by_params(
-        query_params: SearchByParams = Depends(),
-        contact_service: ContactsService = Depends()
+    query_params: SearchByParams = Depends(),
+    contact_service: ContactService = Depends()
 ):
     return contact_service.search_contact_by_param(query_params)
 
@@ -87,10 +85,10 @@ async def search_contact_by_params(
     description="This will display info only for given params (type maybe client, abonne or prospect) return collection"
 )
 def get_contacts_for_client(
-        offset: int = 0,
-        limit: int = 10,
-        type_contact: SearchAllContact = Depends(),
-        contact_service: ContactsService = Depends()
+    offset: int = 0,
+    limit: int = 10,
+    type_contact: SearchAllContact = Depends(),
+    contact_service: ContactService = Depends()
 ):
     return contact_service.get_contacts_for_client(offset, limit, type_contact)
 
@@ -103,8 +101,8 @@ def get_contacts_for_client(
     description="This endpoint filter contract by contract unique number",
 )
 async def get_billing(
-        number: str,
-        contract_service: ContractService = Depends()
+    number: str,
+    contract_service: ContractService = Depends()
 ):
     return contract_service.get_contracts_by_contact_number(number)
 
@@ -117,8 +115,8 @@ async def get_billing(
     description="This endpoint get contract details"
 )
 async def get_contract_details(
-        number: str,
-        params: ContractInvoiceParams = Depends(),
-        contract_service: ContractService = Depends()
+    number: str,
+    params: ContractInvoiceParams = Depends(),
+    contract_service: ContractService = Depends()
 ):
     return contract_service.get_contract_details(number, params)

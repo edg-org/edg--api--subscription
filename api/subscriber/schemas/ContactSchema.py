@@ -1,5 +1,3 @@
-import json
-import logging
 from typing import List, Optional
 from datetime import datetime, date
 from api.constant import OpenAPIFieldDescription
@@ -54,7 +52,7 @@ class ContactInfos(HideFields):
 
     @validator("birthday")
     def check_age(cls, value):
-        if cls.__name__ != "ContactsInputUpdateDto":
+        if cls.__name__ != "ContactInputUpdateDto":
             today = date.today()
             age = (
                 today.year
@@ -88,10 +86,10 @@ class IdentityOutput(Identity, metaclass=AllOptional):
 class ContactInfosOutput(ContactInfos, metaclass=AllOptional):
     pass
 
-class ContactsInputDto(ContactInfos):
+class ContactInputDto(ContactInfos):
     pass
 
-class ContactsInputUpdateDto(ContactInfos):
+class ContactInputUpdateDto(ContactInfos):
     class Config:
         hide_fields = {"birthday"}
 

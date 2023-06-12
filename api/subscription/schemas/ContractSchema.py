@@ -3,7 +3,7 @@ from typing import List, Optional
 from datetime import datetime, date
 from pydantic import BaseModel, Field
 from pydantic.dataclasses import dataclass
-from api.subscriber.schemas.ContactsSchema import ContactInfosOutput
+from api.subscriber.schemas.ContactSchema import ContactInfosOutput
 from api.configs.SchemaBase import (
     HideFields,
     AllOptional,

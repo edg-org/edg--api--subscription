@@ -1,14 +1,14 @@
 import json
 from fastapi import Depends
+from typing import List, Sequence
 from api.utilis.Helper import Helper
-from typing import List, Sequence, cast
-from datetime import datetime, timedelta, date
 from fastapi.encoders import jsonable_encoder
-from api.subscription.utilis.Status import ContractStatus
+from api.utilis.Status import ContractStatus
+from datetime import datetime, timedelta, date
+from api.utilis.GuidGenerator import GuidGenerator
 from api.subscription.models.ContractModel import Contract
-from api.subscription.services.GuidGenerator import GuidGenerator
-from api.subscriber.schemas.ContactsSchema import ContactOutputDto
-from api.subscriber.services.ContactsService import ContactsService
+from api.subscriber.schemas.ContactSchema import ContactOutputDto
+from api.subscriber.services.ContactService import ContactService
 from api.subscription.repositories.ContractRepository import ContractRepository
 from api.subscription.exceptions import (
     ContractNotFound, 
@@ -41,12 +41,12 @@ from api.subscription.schemas.ContractSchema import (
 
 class ContractService:
     contract_repository: ContractRepository
-    contact_service: ContactsService
+    contact_service: ContactService
 
     def __init__(self,
-                 contract_repository: ContractRepository = Depends(),
-                 contact_service: ContactsService = Depends()
-                 ) -> None:
+        contract_repository: ContractRepository = Depends(),
+        contact_service: ContactService = Depends()
+    ) -> None:
         self.contract_repository = contract_repository
         self.contact_service = contact_service
 
@@ -64,7 +64,13 @@ class ContractService:
             customer_number=contract.customer_number
         )
 
-    def buildContractDtoWithPagination(self, contracts: List[ContractDto], offset: int, limit: int, count: int):
+    def buildContractDtoWithPagination(
+        self, 
+        contracts: List[ContractDto], 
+        offset: int, 
+        limit: int, 
+        count: int
+    ):
         total: int = len(contracts)
         offset: int
         limit: int
@@ -355,8 +361,12 @@ class ContractService:
         contracts: List[ContractDto] = [self.buildContractDto(c) for c in contracts]
         if len(contracts) == 0:
             raise ContractNotFound
-        return self.buildContractDtoWithPagination(contracts, offset, limit,
-                                                   self.contract_repository.count_contract(params))
+        return self.buildContractDtoWithPagination(
+            contracts, 
+            offset, 
+            limit,
+            self.contract_repository.count_contract(params)
+        )
 
     def get_contract_by_contact_number(self, contact_number: str, offset: int, limit: int) -> ContractDtoWithPagination:
         """
@@ -371,8 +381,10 @@ class ContractService:
             raise ContractNotFound
         contracts = [self.buildContractDto(c) for c in contracts]
         return self.buildContractDtoWithPagination(
-            contracts, offset, limit, self.contract_repository.
-            count_contract_by_contact_number(contact_number)
+            contracts, 
+            offset, 
+            limit, 
+            self.contract_repository.count_contract_by_contact_number(contact_number)
         )
 
     def get_contracts_by_contact_number(self, contact_number) -> List[ContractDto]:

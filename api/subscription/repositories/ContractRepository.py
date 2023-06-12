@@ -5,7 +5,7 @@ from sqlalchemy import select, func
 from sqlalchemy.orm import Session
 
 from api.configs.Database import get_db_connection
-from api.subscriber.models.ContactsModel import Contacts
+from api.subscriber.models.ContactModel import Contact
 from api.subscription.models.ContractModel import Contract
 
 from api.subscription.schemas.ContractSchema import ContractInvoiceParams, ContractDtoQueryParams
@@ -125,9 +125,9 @@ class ContractRepository:
         :param contact_uid: contact unique ID format (CL+7chifers)
         :return: Contract
         """
-        return self.db.scalars(select(Contract).join(Contacts).where(
+        return self.db.scalars(select(Contract).join(Contact).where(
             Contract.contract_number.ilike(contract_uid),
-            Contacts.customer_number.ilike(contact_uid),
+            Contact.customer_number.ilike(contact_uid),
             Contract.is_activated is True
         )).first()
 
@@ -139,9 +139,9 @@ class ContractRepository:
         :param contact_uid: contact unique ID format (CL+7chifers)
         :return: Contract
         """
-        return self.db.scalars(select(Contract).join(Contacts).where(
+        return self.db.scalars(select(Contract).join(Contact).where(
             Contract.contract_number.ilike(contract_uid),
-            Contacts.customer_number.ilike(contact_uid)
+            Contact.customer_number.ilike(contact_uid)
         )).first()
 
     def get_contract_by_contact_pid_and_contract_uid_for_client(self, contract_uid: str,
@@ -153,9 +153,9 @@ class ContractRepository:
         :param contact_pid: contact identity number (pid from Passport or ID)
         :return: Contract
         """
-        return self.db.scalars(select(Contract).join(Contacts).where(
+        return self.db.scalars(select(Contract).join(Contact).where(
             Contract.contract_number.ilike(contract_uid),
-            Contacts.infos['identity']['pid'] == contact_pid,
+            Contact.infos['identity']['pid'] == contact_pid,
             Contract.is_activated is True
         )).first()
 
@@ -168,9 +168,9 @@ class ContractRepository:
         :param contact_pid: contact identity number (pid from Passport or ID)
         :return: Contract
         """
-        return self.db.scalars(select(Contract).join(Contacts).where(
+        return self.db.scalars(select(Contract).join(Contact).where(
             Contract.contract_number.ilike(contract_uid),
-            Contacts.customer_number.ilike(contact_pid)
+            Contact.customer_number.ilike(contact_pid)
         )).first()
 
     def get_contract_by_status_for_client(self, status: str, offset: int, limit: int) \
@@ -250,8 +250,8 @@ class ContractRepository:
         )).first()
 
     def count_contract_by_contact_number(self, contact_number: str) -> int:
-        return self.db.execute(select(func.count(Contract.id)).join(Contacts).where(
-            Contacts.customer_number.ilike(contact_number),
+        return self.db.execute(select(func.count(Contract.id)).join(Contact).where(
+            Contact.customer_number.ilike(contact_number),
             Contract.deleted_at is not None
         )).scalar()
 
@@ -270,8 +270,8 @@ class ContractRepository:
                 if params.contract_number is not None else True,
                 Contract.infos['status'] == params.status.value.lower().capitalize()
                 if params.status is not None else True
-            ).join(Contacts).where(
-                Contacts.customer_number == params.customer_number
+            ).join(Contact).where(
+                Contact.customer_number == params.customer_number
                 if params.customer_number is not None else True
             ).offset(offset).limit(limit)
         ).all()
@@ -286,12 +286,12 @@ class ContractRepository:
             select(func.count(Contract.id)).filter(
                 Contract.contract_number == params.contract_number
                 if params.contract_number is not None else True,
-                Contacts.customer_number == params.customer_number
+                Contact.customer_number == params.customer_number
                 if params.customer_number is not None else True,
                 Contract.infos['status'] == params.status.value.lower().capitalize()
                 if params.status is not None else True
-            ).join(Contacts).where(
-                Contacts.customer_number == params.customer_number
+            ).join(Contact).where(
+                Contact.customer_number == params.customer_number
                 if params.customer_number is not None else True
             )
         ).scalar()
@@ -300,8 +300,8 @@ class ContractRepository:
         return self.db.scalars(select(Contract).where(Contract.is_activated is True)).all()
 
     def get_contract_by_contact_number(self, contact_number: str) -> Sequence[List[Contract]]:
-        return self.db.scalars(select(Contract).join(Contacts).where(
-            Contacts.customer_number == contact_number,
+        return self.db.scalars(select(Contract).join(Contact).where(
+            Contact.customer_number == contact_number,
             Contract.deleted_at is not None
         )).all()
 
@@ -312,8 +312,8 @@ class ContractRepository:
                 Contract.contract_number == params.contract_number
                 if params.contract_number is not None else True
             ).join(
-                Contacts
-            ).where(Contacts.customer_number == number)
+                Contact
+            ).where(Contact.customer_number == number)
         ).all()
 
 

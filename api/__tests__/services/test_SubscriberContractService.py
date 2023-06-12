@@ -2,9 +2,9 @@ import json
 from unittest import TestCase
 from unittest.mock import create_autospec, Mock, patch
 
-from api.subscriber.services.ContactsService import ContactsService
+from api.subscriber.services.ContactService import ContactService
 from api.subscription.services.ContractService import ContractService
-from api.subscriber.repositories.ContactsRepository import ContactsRepository
+from api.subscriber.repositories.ContactRepository import ContactRepository
 from api.subscription.repositories.ContractRepository import ContractRepository
 
 
@@ -18,16 +18,16 @@ def loadJson():
 class TestContractService(TestCase):
     contract_repository: ContractRepository
     contract_service: ContractService
-    contacts_service: ContactsService
-    contacts_repository: ContactsRepository
+    contacts_service: ContactService
+    contacts_repository: ContactRepository
 
     def setUp(self) -> None:
         super().setUp()
 
         self.contract_repository = create_autospec(ContractRepository)
-        self.contacts_repository = create_autospec(ContactsRepository)
+        self.contacts_repository = create_autospec(ContactRepository)
         self.contract_service = ContractService(self.contract_repository)
-        self.contacts_service = ContactsService(self.contacts_repository)
+        self.contacts_service = ContactService(self.contacts_repository)
         self.contract_service.check_save_business_logic = Mock(return_value=None)
         self.contract_repository.get_contract_by_delivery_point_on_number = Mock(return_value=None)
 

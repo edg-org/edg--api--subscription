@@ -5,8 +5,8 @@ from typing import List
 from fastapi import Depends
 from datetime import datetime
 from sqlalchemy import String
-from api.subscriber.models.ContactsModel import Contacts
-from api.subscriber.repositories.ContactsRepository import ContactsRepository
+from api.subscriber.models.ContactModel import Contact
+from api.subscriber.repositories.ContactRepository import ContactRepository
 from api.exceptions import (
     EmailExist, 
     RepeatingEmail,
@@ -18,22 +18,22 @@ from api.exceptions import (
     RepeatingPhoneNumber,
     RepeatingIdentityPid,
 )
-from api.subscriber.schemas.ContactsSchema import (
+from api.subscriber.schemas.ContactSchema import (
     SearchByParams,
     SearchAllContact,
     ContactOutputDto,
-    ContactsInputDto,
-    ContactsInputUpdateDto,
+    ContactInputDto,
+    ContactInputUpdateDto,
     ContactDtoWithPagination
 )
 from api.utilis.GuidGenerator import GuidGenerator
 
-class ContactsService:
-    contacts_repository: ContactsRepository
-    def __init__(self, contacts_repository: ContactsRepository = Depends()) -> None:
+class ContactService:
+    contacts_repository: ContactRepository
+    def __init__(self, contacts_repository: ContactRepository = Depends()) -> None:
         self.contacts_repository = contacts_repository
 
-    def create_contact(self, contact_body: List[ContactsInputDto]) -> List[ContactOutputDto]:
+    def create_contact(self, contact_body: List[ContactInputDto]) -> List[ContactOutputDto]:
         # Conversations notre object en json
         # Transform contract_schema to a list
         contact_body = [c.dict() for c in contact_body]
@@ -56,12 +56,12 @@ class ContactsService:
         if len(check_repeating) != len(contact_body):
             raise RepeatingPhoneNumber
 
-        contacts: List[Contacts] = [self.check_save_business_logic(c) for c in contact_body]
+        contacts: List[Contact] = [self.check_save_business_logic(c) for c in contact_body]
         contacts = self.contacts_repository.create_contact(contacts)
 
         return [self.buildContractOutputDto(c) for c in contacts]
 
-    def check_save_business_logic(self, contact_body: ContactsInputDto) -> Contacts:
+    def check_save_business_logic(self, contact_body: ContactInputDto) -> Contact:
         '''
             Pour ne pas ajouter deux utilisateur avec utilisant le meme numero
             email et la carte d'identite nous procedons a la verification dans la base 
@@ -81,14 +81,14 @@ class ContactsService:
         
         max_number = self.contacts_repository.getmaxnumber()
         if max_number == 0:
-            code = 10000000
-            
-        return Contacts(
+            max_number = 10000000
+        customer_number = max_number + 1
+        return Contact(
             infos=contact_body,
             customer_number=customer_number
         )
 
-    def update_contact(self, number: str, contact_body: ContactsInputUpdateDto) -> ContactOutputDto:
+    def update_contact(self, number: str, contact_body: ContactInputUpdateDto) -> ContactOutputDto:
         # Convertissons notre object en json
         contact_body = json.loads(contact_body.json())
         '''
@@ -96,11 +96,11 @@ class ContactsService:
             pour ce fait nous verifions l'existance de l'utilisateur dans la bd, au cas ou il n'existe pas 
             on retourne une erreur 403
         '''
-        contact: Contacts = self.contacts_repository.get_contact_by_number(number)
+        contact: Contact = self.contacts_repository.get_contact_by_number(number)
         if contact is None:
             raise ContactNotFound
 
-        checkIdentity: Contacts = self.contacts_repository.get_contact_by_pid_for_admin(
+        checkIdentity: Contact = self.contacts_repository.get_contact_by_pid_for_admin(
             contact_body['identity']['pid'])
         if checkIdentity is not None:
             if checkIdentity.infos['identity']['pid'] != contact.infos['identity']['pid']:
@@ -109,14 +109,14 @@ class ContactsService:
         if contact.deleted_at is not None:
             raise ContactIsDisable
         # Pendant la modification nous verifions si le numero modifie n'existe pas dans la bd
-        contactByPhone: Contacts = self.contacts_repository.get_contact_by_phone_for_admin(
+        contactByPhone: Contact = self.contacts_repository.get_contact_by_phone_for_admin(
             contact_body['address']['telephone'])
         if contactByPhone is not None:
             if contactByPhone.customer_number != contact.customer_number:
                 raise PhoneNumberExist
 
         # Pendant la modification nous verifions si l'email modifie n'existe pas dans la bd
-        contactByEmail: Contacts = self.contacts_repository.get_contact_by_email_for_admin(
+        contactByEmail: Contact = self.contacts_repository.get_contact_by_email_for_admin(
             contact_body['address']['email'])
         if contactByEmail is not None:
             if contactByEmail.customer_number != contact.customer_number:
@@ -125,7 +125,7 @@ class ContactsService:
         contact_body['birthday'] = contact.infos['birthday']
 
         return self.buildContractOutputDto(self.contacts_repository.update_contact(
-            Contacts(
+            Contact(
                 infos=contact_body,
                 updated_at=datetime.now().replace(microsecond=0),
                 created_at=contact.created_at,
@@ -163,7 +163,7 @@ class ContactsService:
         )
 
     def get_contact_by_id_for_admin(self, id: int) -> ContactOutputDto:
-        c: Contacts = self.contacts_repository.get_contact_by_id_for_admin(id)
+        c: Contact = self.contacts_repository.get_contact_by_id_for_admin(id)
         if c is None:
             raise ContactNotFound
         return self.buildContractOutputDto(c)
@@ -183,7 +183,7 @@ class ContactsService:
             raise ContactNotFound
 
     def get_contacts_for_admin(self, page: int) -> ContactDtoWithPagination:
-        contacts: List[Contacts] = self.contacts_repository.get_contacts_for_admin()
+        contacts: List[Contact] = self.contacts_repository.get_contacts_for_admin()
         if len(contacts) != 0:
             return self.buildContactOutputDtoWithPagination([self.buildContractOutputDto(c) for c in contacts], page)
         else:
@@ -191,7 +191,7 @@ class ContactsService:
 
     def get_contacts_for_client(self, offset: int, limit: int,
                                 type_contact: SearchAllContact) -> ContactDtoWithPagination:
-        contacts: List[Contacts] = self.contacts_repository.get_contacts_for_client(offset, limit, type_contact)
+        contacts: List[Contact] = self.contacts_repository.get_contacts_for_client(offset, limit, type_contact)
         if len(contacts) != 0:
             return self.buildContactOutputDtoWithPagination(
                 [self.buildContractOutputDto(c) for c in contacts],
@@ -264,18 +264,18 @@ class ContactsService:
         return self.buildContractOutputDto(c)
 
     def get_contact_by_type_for_admin(self, contact_type: str, offset: int, limit: int) -> List[ContactOutputDto]:
-        contacts: List[Contacts] = self.contacts_repository.get_contact_by_type_for_admin(contact_type, offset, limit)
+        contacts: List[Contact] = self.contacts_repository.get_contact_by_type_for_admin(contact_type, offset, limit)
         if len(contacts) == 0:
             raise ContactNotFound
         return [self.buildContractOutputDto(c) for c in contacts]
 
     def get_contact_by_type_for_client(self, contact_type: str, offset: int, limit: int) -> List[ContactOutputDto]:
-        contacts: List[Contacts] = self.contacts_repository.get_contact_by_type_for_client(contact_type, offset, limit)
+        contacts: List[Contact] = self.contacts_repository.get_contact_by_type_for_client(contact_type, offset, limit)
         if len(contacts) == 0:
             raise ContactNotFound
         return [self.buildContractOutputDto(c) for c in contacts]
 
-    def buildContractOutputDto(self, contact: Contacts):
+    def buildContractOutputDto(self, contact: Contact):
         return ContactOutputDto(
             id=contact.id,
             infos=contact.infos,

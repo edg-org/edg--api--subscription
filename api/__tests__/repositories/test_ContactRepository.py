@@ -2,31 +2,31 @@ import json
 from unittest import TestCase
 from unittest.mock import create_autospec, patch, Mock
 from sqlalchemy.orm import Session
-from api.subscriber.repositories.ContactsRepository import ContactsRepository
+from api.subscriber.repositories.ContactRepository import ContactRepository
 
 
 class TestContactRepository(TestCase):
     session: Session
-    contacts_repository: ContactsRepository
+    contacts_repository: ContactRepository
 
     def setUp(self):
         super().setUp()
         self.session = create_autospec(Session)
-        self.contacts_repository = ContactsRepository(
+        self.contacts_repository = ContactRepository(
             self.session
         )
 
-    @patch("api.subscriber.models.ContactsModel.Contacts", autospec=True)
-    def test_create_contact(self, Contacts):
-        contact = Contacts(infos=self.loadJson())
+    @patch("api.subscriber.models.ContactModel.Contact", autospec=True)
+    def test_create_contact(self, Contact):
+        contact = Contact(infos=self.loadJson())
 
         self.contacts_repository.create_contact(contact)
 
         self.session.add_all.assert_called_once_with(contact)
 
-    @patch("api.subscriber.models.ContactsModel.Contacts", autospec=True)
-    def test_update_contact(self, Contacts):
-        contact = Contacts(infos=self.loadJson())
+    @patch("api.subscriber.models.ContactModel.Contact", autospec=True)
+    def test_update_contact(self, Contact):
+        contact = Contact(infos=self.loadJson())
 
         self.contacts_repository.update_contact(contact)
 
