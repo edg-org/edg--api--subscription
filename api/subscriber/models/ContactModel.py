@@ -1,13 +1,8 @@
-from typing import Dict
 from datetime import datetime
+from sqlalchemy.orm import relationship
 from api.configs.BaseModel import EntityMeta
 from sqlalchemy import JSON, Boolean, DateTime, Column
 from sqlalchemy.dialects.mysql import BIGINT, MEDIUMINT
-from sqlalchemy.orm import (
-    Mapped,
-    mapped_column,
-    relationship,
-)
 
 class Contact(EntityMeta):
     

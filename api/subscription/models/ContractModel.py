@@ -1,14 +1,8 @@
-from typing import List
 from datetime import datetime
+from sqlalchemy.orm import relationship
 from api.configs.BaseModel import EntityMeta
 from sqlalchemy.dialects.mysql import BIGINT, MEDIUMINT
 from sqlalchemy import JSON, ForeignKey, Column, Boolean, DateTime
-from sqlalchemy.orm import (
-    Mapped,
-    mapped_column,
-    relationship,
-)
-
 
 class Contract(EntityMeta):
     
