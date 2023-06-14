@@ -1,6 +1,6 @@
 from typing import List
 from api.configs.Environment import get_env_var
-from fastapi import APIRouter, Depends, status, Query
+from fastapi import APIRouter, Depends, status, Query, Security
 from api.subscription.utilis.JWTBearer import JWTBearer
 from api.subscription.services.ContractService import ContractService
 from api.subscription.schemas.ContractSchema import (
@@ -10,16 +10,17 @@ from api.subscription.schemas.ContractSchema import (
     ContractDtoWithPagination,
     ContactDtoForBillingService,
     ContactWithContractAndPricing,
-    ContractInfoInputUpdate
+    ContractInfoInputUpdate, UserCredential
 )
+from api.subscription.utilis.RoleBasedAccess import RoleBasedAccess
 
 env = get_env_var()
 router_path = env.api_routers_prefix + env.api_version
-
 contractRouter = APIRouter(
     prefix=router_path + "/subscriptions",
     tags=["Subscription"],
     dependencies=[Depends(JWTBearer())]
+
 )
 
 
@@ -31,11 +32,12 @@ contractRouter = APIRouter(
     description="Using this endpoint, you will assign to contact a contract",
 
 )
-def create_contrat(
+async def create_contrat(
         contract_schema: List[ContractSchema],
-        contract_service: ContractService = Depends()
+        contract_service: ContractService = Depends(),
+        token: UserCredential = Depends(JWTBearer())
 ):
-    return contract_service.create_contract(contract_schema)
+    return await contract_service.create_contract(contract_schema, token.token)
 
 
 @contractRouter.put(
@@ -94,10 +96,14 @@ async def get_contract_by_submitted_params(
     status_code=status.HTTP_200_OK,
     response_model=ContactWithContractAndPricing,
     summary="This endpoint return the list of contract and their contact",
-    description="This endpoint return the list of contract and their contact according to the providing contract number"
+    description="This endpoint return the list of contract and their contact according to the providing contract number",
+    dependencies=[Depends(RoleBasedAccess(['Manager']))]
+
 )
 async def get_contract_and_contact_by_contract_uid(
         number: List[str] = Query(None),
-        contract_service: ContractService = Depends()
+        contract_service: ContractService = Depends(),
+        token: UserCredential = Depends(JWTBearer()),
+
 ):
-    return contract_service.get_contract_and_contact_by_contract_uid(number)
+    return await contract_service.get_contract_and_contact_by_contract_uid(number, token.token)

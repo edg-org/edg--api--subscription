@@ -1,5 +1,6 @@
-from typing import List
-
+import json
+from typing import List, Any
+from httpx import AsyncClient
 import requests
 from fastapi import HTTPException, status
 from fastapi.openapi.models import Response
@@ -17,7 +18,9 @@ class RequestMaster:
         header = {
             "Authorization": token
         }
-        response = requests.get(url, headers=header)
+        client = AsyncClient()
+
+        response = await client.get(url, headers=header)
         # logging.warning("response status code ", response.status_code)
         if response.status_code == 403:
             raise HTTPException(
@@ -32,18 +35,17 @@ class RequestMaster:
         return response.text
 
     @classmethod
-    def get_pricing_info(cls, subscriber_code: int, url: str, token: str) -> PricingDto:
+    async def get_pricing_info(cls, url: str, token: str) -> Any:
         header = {
-            "Authorization": token
+            "Authorization": "Bearer "+token
         }
         try:
-            response = requests.get(url, params=subscriber_code)
-            if response.status_code == 200:
-                response.text: PricingDto = jsonable_encoder(response.text)
-                return [PricingDto(
+            client = AsyncClient()
+            response = await client.get(url, headers=header)
+            print("===============>Response =======================>", response.status_code)
 
-                ) for billing in response.text]
-            raise BillingRequestException
+            if response.status_code == 200:
+                return response.text
         except:
             raise RequestResourceError
 

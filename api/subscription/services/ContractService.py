@@ -1,8 +1,10 @@
 import json
 from fastapi import Depends
-from typing import List, Sequence, cast
+from typing import List, Sequence, cast, Any
 from datetime import datetime, timedelta, date
 from fastapi.encoders import jsonable_encoder
+
+from api.configs.Database import env
 from api.subscription.utilis.Status import ContractStatus
 from api.subscription.models.ContractModel import Contract
 from api.subscription.services.GuidGenerator import GuidGenerator
@@ -11,31 +13,31 @@ from api.subscriber.schemas.ContactsSchema import ContactOutputDto
 from api.subscriber.services.ContactsService import ContactsService
 from api.subscription.repositories.ContractRepository import ContractRepository
 from api.subscription.exceptions import (
-    ContractNotFound, 
-    DeleteContractException, 
-    ContractDisabled, 
-    ContractExist, 
-    ContractStatusError, 
+    ContractNotFound,
+    DeleteContractException,
+    ContractDisabled,
+    ContractExist,
+    ContractStatusError,
     RepeatingDeliveryPoint,
-    ContractLevelError, 
+    ContractLevelError,
     StatusErrorWhenCurrentStatusIsEqualInitial,
-    StatusErrorWhenCurrentStatusIsEqualEdited, 
-    ContractIsAlreadyActivated, 
-    ContactOrContractNotFound
+    StatusErrorWhenCurrentStatusIsEqualEdited,
+    ContractIsAlreadyActivated,
+    ContactOrContractNotFound, RequestResourceError
 )
 from api.subscription.schemas.ContractSchema import (
     ContractSchema,
-     ContractDto,
-     ContractDtoWithPagination,
-     ContractInfoInputUpdate,
-     InvoiceDetails,
-     ContractInvoiceDetails,
-     ContractInvoiceParams,
-     Invoice,
-     ContractInvoiceForBillingService,
-     ContactDtoForBillingService,
-     ContactWithContractAndPricing,
-     ContractDtoQueryParams, PricingDto, Pricing
+    ContractDto,
+    ContractDtoWithPagination,
+    ContractInfoInputUpdate,
+    InvoiceDetails,
+    ContractInvoiceDetails,
+    ContractInvoiceParams,
+    Invoice,
+    ContractInvoiceForBillingService,
+    ContactDtoForBillingService,
+    ContactWithContractAndPricing,
+    ContractDtoQueryParams, PricingDto, Pricing
 )
 
 
@@ -76,9 +78,10 @@ class ContractService:
             data=contracts
         )
 
-    def create_contract(self, contract_schema: List[ContractSchema]) -> List[ContractDto]:
+    async def create_contract(self, contract_schema: List[ContractSchema], token: str) -> List[ContractDto]:
         """
         This service has a purpose to create a new contract
+        :param token:
         :param contract_schema: the data model to fill
         :return: return a created object from db Contract
         """
@@ -100,14 +103,15 @@ class ContractService:
                 len(delivery_point_on_metric_number) != len(contract_schema)):
             raise RepeatingDeliveryPoint
 
-        contracts: List[Contract] = [self.check_save_business_logic(c) for c in contract_schema]
+        contracts: List[Contract] = [await self.check_save_business_logic(c, token) for c in contract_schema]
         contracts = self.contract_repository.create_contract(contracts)
         return [self.buildContractDto(c) for c in contracts]
 
-    def check_save_business_logic(self, contract_schema: ContractSchema) -> Contract:
+    async def check_save_business_logic(self, contract_schema: ContractSchema, token: str) -> Contract:
         """
         This service verify if the contact and contract is already exist and the contract is not assign to any
         delivery point
+        :param token:
         :param contract_schema:
         :return: Contract
         """
@@ -139,8 +143,8 @@ class ContractService:
             raise ContractLevelError
 
         # for each contract we have to get the pricing information from referential service if is_bocked_pricing is true
-        contract_schema['pricing'] = jsonable_encoder(self.get_pricing(contract_schema['is_blocked_pricing'],
-                                                      contract_schema['subscription_type']['code']))
+        contract_schema['pricing'] = jsonable_encoder(await self.get_pricing(contract_schema['is_blocked_pricing'],
+                                                                       contract_schema['subscription_type']['code'], token))
         contact = jsonable_encoder(contact)
 
         return Contract(
@@ -150,30 +154,17 @@ class ContractService:
             contract_number=GuidGenerator.contractUID(contact['infos']['identity']['pid']),
         )
 
-    def get_pricing(self, is_bocked_pricing: bool, subscription_code: int) -> Pricing:
-        try:
-            if is_bocked_pricing:
-                pricingDto: PricingDto = RequestMaster.get_pricing_info(
-                    subscription_code,
-                    "http//:localhost:8080/pricing",
-                    ""
-                )
-                return Pricing(
-                    name=pricingDto.name,
-                    subscription_fee=pricingDto.subscription_fee,
-                    slices=pricingDto.slices
-                )
-        except:
-            return Pricing(
-                name="First",
-                subscription_fee=90,
-                slices=[{
-                    "slice_name": "str",
-                    "lower_index": 90,
-                    "upper_index": 20,
-                    "unit_price": 40
-                }]
-            )
+    async def get_pricing(self, is_bocked_pricing: bool, subscription_code: str, token: str) -> Pricing:
+        if is_bocked_pricing:
+            try:
+                pricing = json.loads(await RequestMaster.get_pricing_info(
+                    f"{env.referential_domain_name}/api/v1/subscriptiontypes/" + subscription_code,
+                    token
+                ))
+                print("=======================>>Correct pricing ============> ", pricing['pricing'])
+                return pricing['pricing']
+            except:
+                raise RequestResourceError
 
     def update_contract(self, contract_number: str, contract_schema: ContractInfoInputUpdate) -> ContractDto:
         """
@@ -201,7 +192,8 @@ class ContractService:
             raise ContractDisabled
 
         # check if delivery point on metric_number exist, if true throw error
-        contract_exist_by_delivery_point_on_metric_number = self.contract_repository.get_contract_by_delivery_point_on_metric_number(contract_schema['delivery_point']['metric_number'])
+        contract_exist_by_delivery_point_on_metric_number = self.contract_repository.get_contract_by_delivery_point_on_metric_number(
+            contract_schema['delivery_point']['metric_number'])
         # logging.error("metric number %s", contract_exist_by_delivery_point_on_metric_number)
         if (contract_exist_by_delivery_point_on_metric_number is not None
                 and contract_exist_by_delivery_point_on_metric_number.contract_number != contract_exist.contract_number
@@ -221,7 +213,8 @@ class ContractService:
         if contract_schema['is_blocked_pricing']:
             # we have to fetch pricing info from referential service
             contract_schema['pricing'] = jsonable_encoder(self.get_pricing(contract_schema['is_blocked_pricing'],
-                                                          contract_schema['subscription_type']['code']))
+                                                                           contract_schema['subscription_type'][
+                                                                               'code']))
 
         # if the flag is set to false, so the pricing is None
         if not contract_schema['is_blocked_pricing']:
@@ -342,7 +335,8 @@ class ContractService:
 
         return self.buildContractDto(contract)
 
-    def get_contract_by_submitted_params(self, params: ContractDtoQueryParams, offset: int, limit: int) -> ContractDtoWithPagination:
+    def get_contract_by_submitted_params(self, params: ContractDtoQueryParams, offset: int,
+                                         limit: int) -> ContractDtoWithPagination:
         """
         This function fileter a contract by submitted params
         :param offset:
@@ -352,7 +346,8 @@ class ContractService:
         """
         # logging.warning("excluded id", params.dict(exclude_none=True).)
 
-        contracts: Sequence[List[Contract]] = self.contract_repository.get_contract_by_submitted_params(params, offset, limit)
+        contracts: Sequence[List[Contract]] = self.contract_repository.get_contract_by_submitted_params(params, offset,
+                                                                                                        limit)
         contracts: List[ContractDto] = [self.buildContractDto(c) for c in contracts]
         if len(contracts) == 0:
             raise ContractNotFound
@@ -436,20 +431,20 @@ class ContractService:
                 "http://localhost:8082/billing/invoice",
                 "token")
 
-        else:
-            try:
-                invoice: List[InvoiceDetails] = RequestMaster.get_invoice(
-                    ContractInvoiceForBillingService(
-                        invoice_date_start=params.invoice_date_start,
-                        invoice_date_end=params.invoice_date_end,
-                        contract_number=[c.contract_number for c in contracts]
-                    ),
-                    "http://localhost:8082/billing/invoice",
-                    "")
-            except:
-                return [self.buildContractInvoiceDetails(i.invoice, c) for i in [] for c in contracts]
+        # else:
+        #     try:
+        #         invoice: List[InvoiceDetails] = RequestMaster.get_invoice(
+        #             ContractInvoiceForBillingService(
+        #                 invoice_date_start=params.invoice_date_start,
+        #                 invoice_date_end=params.invoice_date_end,
+        #                 contract_number=[c.contract_number for c in contracts]
+        #             ),
+        #             "http://localhost:8082/billing/invoice",
+        #             "")
+        #     except:
+        #         return [self.buildContractInvoiceDetails(i.invoice, c) for i in [] for c in contracts]
 
-        return [self.buildContractInvoiceDetails(i.invoice, c) for i in invoice for c in contracts]
+        return [self.buildContractInvoiceDetails([], c) for c in contracts]
 
     def buildContractInvoiceDetails(self, invoice: List[Invoice], contract: ContractDto) -> ContractInvoiceDetails:
         return ContractInvoiceDetails(
@@ -464,29 +459,24 @@ class ContractService:
             invoice=invoice
         )
 
-    def get_contract_and_contact_by_contract_uid(self, number: List[str]) -> ContactWithContractAndPricing:
+    async def get_contract_and_contact_by_contract_uid(self, number: List[str],
+                                                       token: str) -> ContactWithContractAndPricing:
         contractsDto: List[Contract] = []
         for contract_number in number:
             contract = self.contract_repository.get_contract_by_contract_uid(contract_number)
             if contract is not None:
                 if not contract.infos['is_blocked_pricing']:
+
                     try:
-                        pricing: PricingDto = RequestMaster.get_pricing_info(
-                            int(contract.infos['subscription_type']['code']),
-                            "http://localhost:8082/pricing",
-                            ""
-                        )
-                    except:
-                        contract.infos['pricing'] = Pricing(
-                            name="First",
-                            subscription_fee=90,
-                            slices=[{
-                                "slice_name": "str",
-                                "lower_index": 90,
-                                "upper_index": 20,
-                                "unit_price": 40
-                            }]
-                        )
+                        pricing = json.loads(await RequestMaster.get_pricing_info(
+                            f"{env.referential_domain_name}/api/v1/subscriptiontypes/"+
+                            str(contract.infos['subscription_type']['code']),
+                            token
+                        ))
+                        contract.infos['pricing'] = pricing['pricing']
+
+                    except Exception as e:
+                        raise RequestResourceError
                 contractsDto.append(contract)
 
         # logging.error(f"aaaa %s ", contracts[0].contacts.infos)

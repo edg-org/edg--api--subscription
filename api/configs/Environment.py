@@ -20,7 +20,7 @@ class __EnvironmentSettings(BaseSettings):
     auth_domain_name: str = getenv("AUTH_DOMAIN_NAME")
     billing_domain_name: str = getenv("BILLING_DOMAIN_NAME")
     api_root_path: str = getenv("API_ROOT_PATH")
-
+    referential_domain_name: str = getenv("REFERENTIAL_DOMAIN_NAME")
     class Config:
         runtime_env = getenv("ENV")
         env_file = (f".env.{runtime_env}" if runtime_env else ".env")

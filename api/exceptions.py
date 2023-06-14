@@ -38,7 +38,7 @@ class EmailExist(HTTPException):
     def __init__(self, email: str = ""):
         super().__init__(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="The email "+email + " is already used by another user, please provide an other"
+            detail="The email " + email + " is already used by another user, please provide an other"
         )
 
 
@@ -73,9 +73,18 @@ class ContactIsDisable(HTTPException):
             detail="This contact is disable " + contact
         )
 
+
 class SearchParamError(HTTPException):
     def __init__(self):
         super().__init__(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="At least one of the search query should be provided"
+        )
+
+
+class RoleBasedAccessError(HTTPException):
+    def __init__(self):
+        super().__init__(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You have not access to this resource"
         )

@@ -24,7 +24,7 @@ class Agency(BaseModel):
 
 
 class SubscriptionType(BaseModel):
-    code: int = Field(description=OpenAPIFieldDescription.SUBSCRIPTION_CODE)
+    code: str = Field(description=OpenAPIFieldDescription.SUBSCRIPTION_CODE)
     name: str = Field(description=OpenAPIFieldDescription.SUBSCRIPTION_NAME)
 
 
@@ -55,10 +55,10 @@ class HomeInfos(BaseModel):
 
 
 class Slices(BaseModel):
-    slice_name: str
-    lower_index: int
-    upper_index: int
-    unit_price: int
+    name: str
+    lower_index: float
+    upper_index: float | None
+    unit_price: float
 
 
 class Pricing(BaseModel):
@@ -234,3 +234,14 @@ class ContactDtoForBillingService(ContractDto):
 
 class ContactWithContractAndPricing(BaseModel):
     contact_contract: List[ContactDtoForBillingService]
+
+
+class Claims(BaseModel):
+    email: str | None
+    exp: datetime | None
+    roles: list | None
+
+
+class UserCredential(BaseModel):
+    token: str | None
+    claims: Claims | None
