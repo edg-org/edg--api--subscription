@@ -18,6 +18,7 @@ from api.subscription.schemas.ContractSchema import (
     ContractInvoiceParams,
     ContractInvoiceDetails
 )
+from api.subscription.utilis.JWTBearer import JWTBearer
 
 env = get_env_var()
 router_path = env.api_routers_prefix + env.api_version
@@ -25,6 +26,7 @@ router_path = env.api_routers_prefix + env.api_version
 contactRouter = APIRouter(
     prefix=router_path + "/customers",
     tags=["Customer"],
+    dependencies=[Depends(JWTBearer())]
 )
 
 @contactRouter.post(

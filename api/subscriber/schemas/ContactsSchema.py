@@ -112,11 +112,11 @@ class ContactDtoWithPagination(BaseModel):
     data: List[ContactOutputDto]
 
 class SearchByParams(BaseModel):
-    pid: str = Field(description=OpenAPIFieldDescription.PID)
-    phone: str = Field(description=OpenAPIFieldDescription.PHONE)
-    email: str = Field(description=OpenAPIFieldDescription.EMAIL)
-    customer_number: Optional[str] = Field(description=OpenAPIFieldDescription.CUSTOMER_NUMBER)
-    status: Optional[bool] = Field(description=OpenAPIFieldDescription.PID)
+    pid: str  | None = Field(description=OpenAPIFieldDescription.PID)
+    phone: str | None = Field(description=OpenAPIFieldDescription.PHONE)
+    email: str | None = Field(description=OpenAPIFieldDescription.EMAIL)
+    customer_number: str | None = Field(description=OpenAPIFieldDescription.CUSTOMER_NUMBER)
+    status: bool | None = Field(description=OpenAPIFieldDescription.PID)
 
 class SearchAllContact(BaseModel):
     type: Optional[str] = Field(description=OpenAPIFieldDescription.CONTACT_TYPE)
